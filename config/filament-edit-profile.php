@@ -1,0 +1,12 @@
+<?php
+
+return [
+    'name_column' => 'nombres',
+    'locale_column' => 'locale',
+    'theme_color_column' => 'theme_color',
+    'avatar_column' => 'avatar_url',
+    'disk' => env('FILESYSTEM_DISK', 'public'),
+    'visibility' => 'public',
+
+    'show_custom_fields' => false,
+];
