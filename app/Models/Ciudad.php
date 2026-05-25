@@ -8,7 +8,14 @@ class Ciudad extends Model
 {
     protected $table = 'ciudades';
 
-    protected $fillable = ['id', 'nombre', 'whatsapp', 'imagen'];
+    protected $fillable = [
+        'id',
+        'nombre',
+        'whatsapp',
+        'whatsapp_arriendo',
+        'whatsapp_venta',
+        'imagen',
+    ];
 
     public function inmueble()
     {

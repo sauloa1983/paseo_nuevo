@@ -92,7 +92,7 @@
 
 
 
-/* Botones flotantes: ir arriba + WhatsApp (columna, sin solaparse) */
+/* Botones flotantes: WhatsApp arriba, flecha subir debajo (columna, sin solaparse) */
 .floating-stack {
     position: fixed;
     right: 25px;
@@ -354,9 +354,37 @@ a.pe-wa-widget__action:hover {
     height: 1.5rem;
 }
 
-.pe-wa-widget__action-label {
+.pe-wa-widget__action-text {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
     text-align: left;
+}
+
+.pe-wa-widget__action-label {
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.25;
+    color: #111827;
+}
+
+.pe-wa-widget__action-phone {
+    font-size: 14px;
+    font-weight: 500;
+    color: #25d366;
+    letter-spacing: 0.02em;
+}
+
+.pe-wa-widget__action-wa {
+    flex-shrink: 0;
+    color: #25d366;
+    opacity: 0.9;
+}
+
+a.pe-wa-widget__action:hover .pe-wa-widget__action-label {
+    color: #c81517;
 }
 
 .pe-wa-widget__fab {

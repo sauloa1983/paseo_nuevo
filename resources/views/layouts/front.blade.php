@@ -24,11 +24,11 @@
     @include('partials.footer')
 
 
-    {{-- Botones flotantes: ir arriba (arriba) + WhatsApp (abajo) --}}
+    {{-- Botones flotantes: WhatsApp arriba, flecha ir arriba debajo (más cerca de la esquina) --}}
     <div class="floating-stack">
-        <div id="backtotop"><a href="#"></a></div>
-
         @include('partials.whatsapp-router')
+
+        <div id="backtotop"><a href="#"></a></div>
     </div>
 
 

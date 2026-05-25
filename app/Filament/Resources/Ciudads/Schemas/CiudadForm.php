@@ -26,11 +26,19 @@ class CiudadForm
                         'unique' => 'Ya existe una ciudad con este nombre. Por favor, elige otro nombre.',
                     ]),
 
-                TextInput::make('whatsapp')
-                    ->label('WhatsApp (solo dígitos, ej: 573076978295)')
+                TextInput::make('whatsapp_arriendo')
+                    ->label('WhatsApp Arriendos')
                     ->tel()
                     ->maxLength(20)
-                    ->helperText('Número para el widget de contacto por ciudad.'),
+                    ->placeholder('573001234567')
+                    ->helperText('Número al elegir Arriendos en el widget. Solo dígitos, con indicativo 57.'),
+
+                TextInput::make('whatsapp_venta')
+                    ->label('WhatsApp Ventas')
+                    ->tel()
+                    ->maxLength(20)
+                    ->placeholder('573001234567')
+                    ->helperText('Número al elegir Ventas en el widget. Solo dígitos, con indicativo 57.'),
 
                 // 2️⃣ Campo IMAGEN
                 FileUpload::make('imagen')

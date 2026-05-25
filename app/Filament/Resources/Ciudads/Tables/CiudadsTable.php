@@ -22,8 +22,13 @@ class CiudadsTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('whatsapp')
-                    ->label('WhatsApp')
+                TextColumn::make('whatsapp_arriendo')
+                    ->label('WA Arriendos')
+                    ->placeholder('—')
+                    ->toggleable(),
+
+                TextColumn::make('whatsapp_venta')
+                    ->label('WA Ventas')
                     ->placeholder('—')
                     ->toggleable(),
             ])

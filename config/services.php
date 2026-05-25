@@ -41,11 +41,11 @@ return [
         'messages' => [
             'arriendo' => env(
                 'WHATSAPP_MESSAGE_ARRIENDO',
-                'Hola, me interesa información sobre arriendos en :ciudad con Paseo España.'
+                'Hola, me interesa información sobre arriendos en :ciudad.'
             ),
             'venta' => env(
                 'WHATSAPP_MESSAGE_VENTA',
-                'Hola, me interesa información sobre ventas en :ciudad con Paseo España.'
+                'Hola, me interesa información sobre ventas en :ciudad.'
             ),
             'legal' => env(
                 'WHATSAPP_MESSAGE_LEGAL',
