@@ -3,9 +3,10 @@
     <title>@yield('title', 'Paseo España Inmobiliaria')</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/color.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/color.css') }}?v={{ filemtime(public_path('css/color.css')) }}">
+    @stack('styles')
 
 </head>
 <body>
@@ -50,9 +51,6 @@
 
 
 
-    <!-- Scripts del HTML -->
-    <script src="{{ asset('scripts/jquery-3.6.0.min.js') }}"></script>
-    <!-- Todos los scripts... -->
     @stack('scripts')
 
 </div>

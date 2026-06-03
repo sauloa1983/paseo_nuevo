@@ -44,12 +44,25 @@ class TestimonialResource extends Resource
                         'max' => 'El texto excede los 50 caracteres.',
                     ]),
                 TextInput::make('descripcion')
-                    ->label('Descripción')
+                    ->label('Titulo')
                     ->required()
                     ->maxLength(255)
                     ->validationMessages([
                         'required' => 'Debe contener una descripción.',
                         'max' => 'El texto excede los 255 caracteres.',
+                    ]),
+                Select::make('calificacion')
+                    ->label('Calificación')
+                    ->options([
+                        5 => '5 - Excelente',
+                        4 => '4 - Muy buena',
+                        3 => '3 - Buena',
+                        2 => '2 - Regular',
+                        1 => '1 - Mala',
+                    ])
+                    ->required()
+                    ->validationMessages([
+                        'required' => 'La calificación es obligatoria.',
                     ]),
                 Textarea::make('mensaje')
                     ->label('Contenido')
@@ -81,6 +94,9 @@ class TestimonialResource extends Resource
                 TextColumn::make('descripcion')
                     ->label('Descripción')
                     ->searchable(),
+                TextColumn::make('calificacion')
+                    ->label('Calificación')
+                    ->sortable(),
                 TextColumn::make('mensaje')
                     ->label('Contenido')
                     ->searchable()

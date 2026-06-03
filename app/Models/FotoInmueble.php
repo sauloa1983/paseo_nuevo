@@ -34,23 +34,33 @@ class FotoInmueble extends Model implements HasMedia
     // URL pública de la foto
     public function getUrlAttribute()
     {
-        return $this->foto
-            /*? asset('storage/fotos/' . $this->file)*/
-            ? asset('storage/fotos/' . $this->foto)
+        $path = $this->foto;
+
+        return $path
+            ? asset('storage/' . ltrim($path, '/'))
             : null;
     }
 
-    // En tu modelo (ej: FotoInmueble.php)
     protected function foto(): Attribute
     {
         return Attribute::make(
-            get: fn ($value) => $value ? "fotos/{$value}" : null,
-            set: fn ($value) => str_replace('fotos/', '', $value),
+            get: function (?string $value): ?string {
+                if (blank($value)) {
+                    return null;
+                }
+
+                $normalized = ltrim(str_replace('fotos/', '', $value), '/');
+
+                return 'fotos/' . $normalized;
+            },
+            set: function (?string $value): ?string {
+                if (blank($value)) {
+                    return null;
+                }
+
+                return ltrim(str_replace('fotos/', '', $value), '/');
+            },
         );
-        /*return Attribute::make(
-            get: fn ($value) => $value,
-            set: fn ($value) => str_replace('storage/', '', $value),
-        );*/
     }
 
     public function registerMediaCollections(): void {

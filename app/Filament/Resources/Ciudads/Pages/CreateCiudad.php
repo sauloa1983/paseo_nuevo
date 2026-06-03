@@ -21,6 +21,10 @@ class CreateCiudad extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
+        if ($this->getRecord()?->has_office) {
+            return $this->getResource()::getUrl('edit', ['record' => $this->getRecord()]);
+        }
+
         return $this->getResource()::getUrl('index');
     }
 

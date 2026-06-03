@@ -2,65 +2,29 @@
 
 @section('content')
 
-<!-- Hero Search -->
+<!-- Hero Search (+ banner publicitario lightbox debajo del buscador) -->
 @include('partials.hero-search')
 
-<!-- Container -->
-<div class="container">
-	<div class="row">
-
-		<div class="col-md-12 margin-top-60">
-			<h3 class="headline centered margin-bottom-35 margin-top-10">Nuestra oferta  <span>Encuentra tu inmueble ideal</span></h3>
-		</div>
-
-		@php $ciudades = $ciudadesPopulares->shuffle(); @endphp
-
-        @foreach($ciudades as $index => $ciudadItem)
-            @if($loop->iteration % 2 == 1)
-                {{-- INICIO NUEVA FILA --}}
-                <div class="" style="">
-            @endif
-                    <div class="col-md-{{ ($loop->iteration == 1 || $loop->iteration == 4) ? '4' : '8' }}">
-                        <a href="{{ route('inmuebles.search') }}?ciudad={{ $ciudadItem->ciudad }}" class="img-box" data-background-image="/storage/{{ $ciudadItem->ciudadRelacion()->first()->imagen }}">
-
-                            <div class="img-box-content visible">
-                                <h4>{{ $ciudadItem->ciudadRelacion()->first()->nombre ?? 'Nombre no disponible' }}</h4>
-                                <span>{{ $ciudadItem->total }} Propiedades</span>
-                            </div>
-                        </a>
-                    </div>
-            @if($loop->iteration % 2 == 0 || $loop->last)
-                {{-- FIN FILA --}}
-                </div>
-            @endif
-        @endforeach
-
-
-	</div>
-</div>
-<!-- Container / End -->
+<!-- Nuestra oferta — ciudades destacadas -->
+@include('partials.city-offer-grid', ['ciudadesPopulares' => $ciudadesPopulares])
 
 <!-- Carousel Propiedades en arriendo  -->
-<section class="fullwidth " data-background-color="#f9f9f9">
+<section class="fullwidth pe-destacados-section" data-background-color="#f9f9f9">
     <div class="container">
         <div class="row">
 
-            <div class="col-md-12" style="margin-top: -50px">
-                <h3 class="headline ">Destacados en Arriendo</h3>
-            </div>
+            <div class="col-md-12 pe-destacados-section__block" style="margin-top: -50px">
+                <div class="pe-destacados-section__header">
+                    <h3 class="headline">Destacados en Arriendo</h3>
+                    <div class="pe-destacados-section__nav" aria-hidden="true"></div>
+                </div>
 
-            <!-- Carousel -->
-            <div class="col-md-12">
                 <div class="carousel">
-
                     @foreach($destacados_arriendo as $inmueble)
                     <div class="carousel-item">
                         @include('partials.inmueble-card', ['inmueble' => $inmueble, 'modo' => 'arriendo'])
                     </div>
                     @endforeach
-
-                    <!-- Listing Item / End -->
-
                 </div>
             </div>
             <!-- Carousel / End -->
@@ -69,27 +33,24 @@
     </div>
 </section>
 
-<!-- Carousel Propiedades en arriendo -->
-<section class="margin-top-35" data-background-color="#f9f9f9">
+<!-- Carousel Propiedades en venta -->
+<section class="margin-top-35 pe-destacados-section" data-background-color="#f9f9f9">
     <div class="container">
 
         <div class="row">
 
-            <div class="col-md-12">
-                <h3 class="headline margin-bottom-25 margin-top-0">Destacados en Venta</h3>
-            </div>
+            <div class="col-md-12 pe-destacados-section__block">
+                <div class="pe-destacados-section__header">
+                    <h3 class="headline margin-bottom-25 margin-top-0">Destacados en Venta</h3>
+                    <div class="pe-destacados-section__nav" aria-hidden="true"></div>
+                </div>
 
-            <!-- Carousel -->
-            <div class="col-md-12">
                 <div class="carousel">
-
-
                     @foreach($destacados_ventas as $inmueble)
                     <div class="carousel-item">
                         @include('partials.inmueble-card', ['inmueble' => $inmueble, 'modo' => 'venta'])
                     </div>
                     @endforeach
-
                 </div>
             </div>
             <!-- Carousel / End -->
@@ -112,15 +73,20 @@
     <!-- JS específicos para carousel, search... del HTML -->
 	<script>
 	// Inicializa carousel propiedades dinámicas
-	$('.carousel').slick({
+	$('.pe-destacados-section .carousel').each(function () {
+		var $carousel = $(this);
+		var $nav = $carousel.closest('.pe-destacados-section__block').find('.pe-destacados-section__nav');
+
+		$carousel.slick({
+		appendArrows: $nav,
 		infinite: true,
-		slidesToShow: 4,
+		slidesToShow: 3,
 		slidesToScroll: 1,
 		responsive: [
 			{
-				breakpoint: 1024,
+				breakpoint: 1200,
 				settings: {
-					slidesToShow: 3,
+					slidesToShow: 2,
 					slidesToScroll: 1
 				}
 			},
@@ -132,38 +98,69 @@
 				}
 			},
 			{
-				breakpoint: 480,
+				breakpoint: 580,
 				settings: {
 					slidesToShow: 1,
 					slidesToScroll: 1
 				}
 			}
 		]
+		});
 	});
 	</script>
 
     <script>
+    // Valida que el estado (Arriendo/Venta) sea obligatorio cuando hay precio min/max.
+    function peValidateStatusRequired(form) {
+        const min = form.querySelector('[name="min_price"]');
+        const max = form.querySelector('[name="max_price"]');
+        const minVal = min ? parseInt((min.value || '').replace(/\D/g, '')) || 0 : 0;
+        const maxVal = max ? parseInt((max.value || '').replace(/\D/g, '')) || 0 : 0;
+
+        const checked = form.querySelector('input[name="status"]:checked');
+        const select = form.querySelector('select[name="status"]');
+        const statusVal = checked ? checked.value : (select ? select.value : '');
+        const statusField = form.querySelector('.search-type');
+
+        if ((minVal > 0 || maxVal > 0) && !statusVal) {
+            if (statusField) { statusField.classList.add('is-required-error'); }
+            return false;
+        }
+
+        if (statusField) { statusField.classList.remove('is-required-error'); }
+        return true;
+    }
+
     document.querySelector('.main-search-form').addEventListener('submit', function(e) {
 
-    const code = document.getElementById('code').value.trim();
+    // Estado obligatorio si se establece precio min/max
+    if (!peValidateStatusRequired(this)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+    }
 
-        if (code) {
+    const status = this.querySelector('input[name="status"]:checked')?.value ?? 'rent';
+
+    if (status === 'codigo') {
+        const code = document.getElementById('code').value.trim();
+
+        if (!code) {
             e.preventDefault();
-
-            // 🔍 1. Construir URL plantilla
-            const urlPlantilla = '{{ route("inmuebles.show", ":codigo") }}';
-
-            // 🔍 2. Reemplazar SOLO :codigo
-            const urlLimpia = urlPlantilla.replace(':codigo', encodeURIComponent(code));
-
-            // 🔍 3. LIMPIAR TODOS params (sin searchParams.set!)
-            console.log('🚀 URL final:', urlLimpia);  // DEBUG
-
-            window.location.href = urlLimpia;  // /inmuebles/7264 ✅ SIN query string
+            document.getElementById('code')?.focus();
             return false;
-        } else {
-            this.action = '{{ route("inmuebles.search") }}';   // /inmuebles
         }
+
+        e.preventDefault();
+
+        const urlPlantilla = '{{ route("inmuebles.show", ":codigo") }}';
+        const urlLimpia = urlPlantilla.replace(':codigo', encodeURIComponent(code));
+
+        window.location.href = urlLimpia;
+        return false;
+    }
+
+    this.action = '{{ route("inmuebles.search") }}';
     });
     </script>
 
@@ -238,25 +235,16 @@
                 maxInput.addEventListener(event, () => safeFormatPrice(maxInput));
             });
 
-            // Validación (de tu código anterior)
-            function validatePrices() {
-                const minVal = parseInt(minInput.value?.replace(/\D/g, '') || '0') || 0;
-                const maxVal = parseInt(maxInput.value?.replace(/\D/g, '') || '0') || 0;
-
-                if (minVal > 0 && maxVal === 0 && !maxInput.value?.trim()) {
-                    maxInput.value = '0';
-                }
-            }
-
-
-            // Submit safe
+            // Submit safe: deja los precios vacíos como vacíos (sin forzar 0)
             const form = minInput.closest('form');
             if (form) {
                 form.addEventListener('submit', (e) => {
                     safeCleanPrice(minInput);
                     safeCleanPrice(maxInput);
-                    validatePrices();
-                    // ... resto validación submit
+
+                    // Si quedan vacíos, deshabilítalos para que NO viajen en la URL
+                    if (!minInput.value.trim()) { minInput.disabled = true; }
+                    if (!maxInput.value.trim()) { maxInput.disabled = true; }
                 });
             }
         }

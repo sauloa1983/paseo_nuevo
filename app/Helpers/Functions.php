@@ -136,3 +136,81 @@ if (!function_exists('whatsapp_url_legal')) {
         return whatsapp_build_url((string) $phone, (string) $message);
     }
 }
+
+if (! function_exists('whatsapp_phone_from_asesor_telefonos')) {
+    /**
+     * Extrae el primer celular colombiano válido (10 dígitos, inicia en 3) del teléfono del asesor.
+     */
+    function whatsapp_phone_from_asesor_telefonos(?string $telefonos): ?string
+    {
+        if (blank($telefonos)) {
+            return null;
+        }
+
+        $parts = preg_split('/[\s,\/;|]+/', trim($telefonos)) ?: [];
+
+        foreach ($parts as $part) {
+            $digits = preg_replace('/\D+/', '', (string) $part);
+
+            if ($digits === '') {
+                continue;
+            }
+
+            if (str_starts_with($digits, '57') && strlen($digits) === 12 && str_starts_with(substr($digits, 2), '3')) {
+                return $digits;
+            }
+
+            if (strlen($digits) === 10 && str_starts_with($digits, '3')) {
+                return '57'.$digits;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('whatsapp_url_for_property_asesor')) {
+    function whatsapp_url_for_property_asesor(?string $telefonos, string $message): ?string
+    {
+        $phone = whatsapp_phone_from_asesor_telefonos($telefonos);
+
+        return $phone ? whatsapp_build_url($phone, $message) : null;
+    }
+}
+
+if (!function_exists('tenant_form_url')) {
+    /**
+     * URL pública del formulario de estudio (Zurich o El Libertador) según el rol.
+     *
+     * @param  'libertador'|'zurich'  $provider
+     * @param  'natural'|'juridica'  $key
+     */
+    function tenant_form_url(string $provider, string $key): ?string
+    {
+        $path = config("tenant_forms.{$provider}.{$key}");
+
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        return asset($path);
+    }
+}
+
+if (! function_exists('tenant_instructivo_url')) {
+    /**
+     * @param  array{url?: string, file?: string}  $item
+     */
+    function tenant_instructivo_url(array $item): ?string
+    {
+        if (! empty($item['url'])) {
+            return $item['url'];
+        }
+
+        if (! empty($item['file'])) {
+            return asset($item['file']);
+        }
+
+        return null;
+    }
+}

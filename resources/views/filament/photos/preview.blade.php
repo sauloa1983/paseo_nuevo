@@ -1,7 +1,7 @@
 @php
 $record = $getRecord();
 $state = $record?->foto ?? null;  // ✅ Usa $getRecord()->foto
-$url = $state ? asset('storage/fotos/' . $state) : null;
+$url = $state ? asset('storage/' . ltrim($state, '/')) : null;
 @endphp
 
 {{-- Preview --}}

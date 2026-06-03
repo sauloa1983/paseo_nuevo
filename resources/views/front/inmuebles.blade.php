@@ -24,24 +24,21 @@
                     <div class="row with-forms">
 
                         <!-- Status -->
-                        <div class="col-md-2">
+                        <div class="col-md-2 pe-status-field">
                             <select name="status" data-placeholder="Estado del Inmueble" class="custom-select" >
-                                <option>Cualquiera</option>
+                                <option value="">Cualquiera</option>
                                 <option value="sale" {{ request('status') == 'sale' ? 'selected' : '' }}>Venta</option>
                                 <option value="rent" {{ request('status') == 'rent' ? 'selected' : '' }}>Arriendo</option>
                             </select>
+                            <small class="pe-status-error" role="alert">Selecciona Arriendo o Venta para filtrar por precio.</small>
                         </div>
 
-                        <!-- Property Type -->
+                        <!-- Property Type (multi) -->
                         <div class="col-md-3">
-                            <select name="type" data-placeholder="Tipo Inmueble" class="custom-select">
-                                <option value="">Tipo Inmueble</option>
-                                @foreach($tipos_inm as $val =>$tipo)
-                                    <option value="{{ $val }}" {{ request('type') == $val ? 'selected' : '' }}>
-                                        {{ ucfirst($tipo) }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-property-type-multi-select
+                                :options="$tipos_inm"
+                                :selected="request()->query('type', [])"
+                            />
                         </div>
 
                         <div class="col-md-3">
@@ -61,7 +58,11 @@
                                 <select name="barrio" id="barrio-select" data-placeholder="Barrio" class="custom-select">
                                     <option value="">Barrio</option>
                                 </select>
-                                <button class="button">Buscar</button>
+                                <!--<button class="button">Buscar</button>-->
+                                <button class="button pe-search-submit-btn">
+                                    <i class="fa fa-search" aria-hidden="true"></i>
+                                    <span>Buscar</span>
+                                </button>
                             </div>
                         </div>
 
@@ -129,8 +130,7 @@
                         <div class="more-search-options-container">
                             <div class="row with-forms">
                                 <!-- Area min -->
-                                <div class="col-md-4
-                                ">
+                                <div class="col-md-2">
                                     <div class="select-input">
                                         <input type="text"
                                             name="min_area"
@@ -141,7 +141,7 @@
                                 </div>
 
                                 <!-- Area max -->
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <div class="select-input">
                                         <input type="text"
                                             name="max_area"
@@ -152,9 +152,9 @@
                                 </div>
 
                                 <!-- Estrato -->
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <select name="estrato" data-placeholder="Estrato" class="custom-select" >
-                                        <option value="">Estrato (Cualquiera)</option>
+                                        <option value="">Estrato</option>
                                         <option value="1" {{ request('estrato') == '1' ? 'selected' : '' }}>1</option>
                                         <option value="2" {{ request('estrato') == '2' ? 'selected' : '' }}>2</option>
                                         <option value="3" {{ request('estrato') == '3' ? 'selected' : '' }}>3</option>
@@ -162,6 +162,26 @@
                                         <option value="5" {{ request('estrato') == '5' ? 'selected' : '' }}>5</option>
                                         <option value="6" {{ request('estrato') == '6' ? 'selected' : '' }}>6</option>
                                         <option value="Comercial" {{ request('estrato') == '10' ? 'selected' : '' }}>Comercial</option>
+                                    </select>
+                                </div>
+
+                                <!-- Parqueadero -->
+                                <div class="col-md-3">
+                                    <select name="garaje" data-placeholder="Parqueadero" class="custom-select" >
+                                        <option value="">Parqueadero (Cualquiera)</option>
+                                        <option value="0" {{ request('garaje') === '0' ? 'selected' : '' }}>Sin parqueadero</option>
+                                        <option value="1" {{ request('garaje') == '1' ? 'selected' : '' }}>1 o más</option>
+                                        <option value="2" {{ request('garaje') == '2' ? 'selected' : '' }}>2 o más</option>
+                                        <option value="3" {{ request('garaje') == '3' ? 'selected' : '' }}>3 o más</option>
+                                    </select>
+                                </div>
+
+                                <!-- Administración -->
+                                <div class="col-md-3">
+                                    <select name="admon" data-placeholder="Administración" class="custom-select" >
+                                        <option value="">Administración (Cualquiera)</option>
+                                        <option value="con" {{ request('admon') == 'con' ? 'selected' : '' }}>Con administración</option>
+                                        <option value="sin" {{ request('admon') == 'sin' ? 'selected' : '' }}>Sin administración</option>
                                     </select>
                                 </div>
 
@@ -234,7 +254,13 @@
                         <form action="{{ url()->current() }}" method="GET" style="display: inline;">
                             <!-- Copiar TODOS los filtros actuales -->
                             @foreach(request()->except('order', 'page') as $key => $value)
-                                @if(is_scalar($value))
+                                @if(is_array($value))
+                                    @foreach($value as $item)
+                                        @if(is_scalar($item) && $item !== '')
+                                            <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                                        @endif
+                                    @endforeach
+                                @elseif(is_scalar($value) && $value !== '')
                                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                                 @endif
                             @endforeach
@@ -252,7 +278,7 @@
 
                 <div class="col-md-6">
                     @php
-                        $activeLayout = request('layout', 'list');
+                        $activeLayout = request('layout', 'grid-three');
                         $layoutQuery = fn (string $layout) => '?' . http_build_query(array_merge(request()->except('page'), ['layout' => $layout]));
                     @endphp
                     <!-- Layout Switcher -->
@@ -279,12 +305,13 @@
 			<div id="listings-container_gral">
 				@include('partials.lista', [
                     'properties' => $properties ?? collect(),
-                    'layout' => $layout ?? 'list',
+                    'layout' => $layout ?? 'grid-three',
                 ])
 			</div>
 		</div>
     </div>
 </div>
+<div class="margin-top-35"></div>
 @endsection
 
 
@@ -393,25 +420,40 @@ document.addEventListener('DOMContentLoaded', function() {
             maxInput.addEventListener(event, () => safeFormatPrice(maxInput));
         });
 
-        // Validación (de tu código anterior)
-        function validatePrices() {
-            const minVal = parseInt(minInput.value?.replace(/\D/g, '') || '0') || 0;
-            const maxVal = parseInt(maxInput.value?.replace(/\D/g, '') || '0') || 0;
-
-            if (minVal > 0 && maxVal === 0 && !maxInput.value?.trim()) {
-                maxInput.value = '0';
-            }
-        }
-
-
-        // Submit safe
+        // Submit safe: deja los precios vacíos como vacíos (sin forzar 0)
         const form = minInput.closest('form');
         if (form) {
+            const statusSelect = form.querySelector('[name="status"]');
+            const statusField = form.querySelector('.pe-status-field');
+
+            if (statusSelect && statusField) {
+                statusSelect.addEventListener('change', () => {
+                    if (statusSelect.value) { statusField.classList.remove('is-required-error'); }
+                });
+            }
+
             form.addEventListener('submit', (e) => {
+                // Estado (Arriendo/Venta) obligatorio si hay precio min/max
+                const minVal = parseInt((minInput.value || '').replace(/\D/g, '')) || 0;
+                const maxVal = parseInt((maxInput.value || '').replace(/\D/g, '')) || 0;
+                const statusVal = statusSelect ? statusSelect.value : '';
+
+                if ((minVal > 0 || maxVal > 0) && !statusVal) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (statusField) { statusField.classList.add('is-required-error'); }
+                    if (statusSelect) { statusSelect.focus(); }
+                    return false;
+                }
+
+                if (statusField) { statusField.classList.remove('is-required-error'); }
+
                 safeCleanPrice(minInput);
                 safeCleanPrice(maxInput);
-                validatePrices();
-                // ... resto validación submit
+
+                // Si quedan vacíos, deshabilítalos para que NO viajen en la URL
+                if (!minInput.value.trim()) { minInput.disabled = true; }
+                if (!maxInput.value.trim()) { maxInput.disabled = true; }
             });
         }
     }

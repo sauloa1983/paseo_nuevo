@@ -2,29 +2,17 @@
 @section('title', 'Nuestros Clientes - Paseo España Inmobiliaria')
 
 @section('content')
-<!-- Titlebar
-================================================== -->
-<div id="titlebar">
-	<div class="container">
-		<div class="row">
-			<div class="col-md-12">
 
-				<h2>Nuestros Clientes</h2>
-
-				<!-- Breadcrumbs -->
-				<nav id="breadcrumbs">
-					<ul>
-						<li><a href="{{ route('home') }}">Inicio</a></li>
-						<li>Nuestros Clientes</li>
-					</ul>
-				</nav>
-
-			</div>
-		</div>
-	</div>
-</div>
-
-<!-- Container -->
+@include('partials.banner-hero', [
+    'headingId' => 'clients-hero-heading',
+    'title' => 'Nuestros Clientes',
+    'accent' => '',
+    'text' => 'Más de 30 años construyendo relaciones de confianza y ayudando a miles de familias a encontrar su lugar ideal.',
+    'image' => 'images/clientes.jpg',
+    'imageAlt' => 'Apretón de manos simbolizando confianza entre clientes y la inmobiliaria',
+    'breadcrumbLabel' => '',
+    'showActions' => false, {{-- Nuevo Prop --}}
+])
 
 @include('partials.client-opinion', ['testimonials' => $testimonials])
 

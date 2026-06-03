@@ -14,7 +14,7 @@ class PropertyContactController extends Controller
     {
         $request->validate([
             'property_id' => 'required',
-            'email' => 'required|email',
+            'email' => 'nullable|email',
             'phone' => 'required',
             'message' => 'required',
         ]);

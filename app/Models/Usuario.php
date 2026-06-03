@@ -21,7 +21,7 @@ class Usuario extends Authenticatable implements FilamentUser, HasName
     public $incrementing = false;      // ← + esta
     protected $keyType = 'string';     // ← + esta
 
-    protected $fillable = ['cedula', 'nombres', 'apellidos', 'direccion', 'telefonos', 'email', 'usuario', 'cargo', 'vigente', 'password'];  // Ajusta campos reales
+    protected $fillable = ['cedula', 'nombres', 'apellidos', 'direccion', 'telefonos', 'email', 'foto', 'usuario', 'cargo', 'vigente', 'password'];
     const UPDATED_AT = 'fecha_modif';
 
     protected $hidden = [
@@ -58,5 +58,17 @@ class Usuario extends Authenticatable implements FilamentUser, HasName
     public function getNombresCompletosAttribute()
     {
         return $this->nombres . ' ' . $this->apellidos;
+    }
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (blank($this->foto)) {
+            return null;
+        }
+
+        $path = str_replace('\\', '/', trim($this->foto));
+        $path = ltrim(str_replace(['storage/', 'public/'], '', $path), '/');
+
+        return asset('storage/' . $path);
     }
 }

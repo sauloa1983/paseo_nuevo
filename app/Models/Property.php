@@ -2,18 +2,42 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEtiquetasComerciales;
+use App\Models\Concerns\HasVideoPrincipal;
 use Illuminate\Database\Eloquent\Model;
 
 class Property extends Model
 {
+    use HasEtiquetasComerciales;
+    use HasVideoPrincipal;
     protected $table = 'inmuebles';
     public $timestamps = false;
 
     protected $fillable = [
         'id','codigo', 'tipo_fk', 'venta', 'direccion', 'ciudad',
         'valor_venta', 'propietario', 'area_construida',
-        'no_alcobas', 'no_banos', 'fecha_captacion'
+        'no_alcobas', 'no_banos', 'fecha_captacion',
+        'contract_end_date', 'badge_status',
     ];
+
+    protected $casts = [
+        'contract_end_date' => 'date',
+    ];
+
+    /**
+     * Excluye inmuebles con datos críticos incompletos / "N/A":
+     * deben tener tipo (para el título) y al menos un precio válido (> 0).
+     */
+    public function scopeConDatosCompletos($query)
+    {
+        return $query
+            ->whereNotNull('tipo_fk')
+            ->where('tipo_fk', '!=', 0)
+            ->where(function ($q) {
+                $q->where('valor_arriendo', '>', 0)
+                  ->orWhere('valor_venta', '>', 0);
+            });
+    }
 
     public function tipo_inmueble()
     {

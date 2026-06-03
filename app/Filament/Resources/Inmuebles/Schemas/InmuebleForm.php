@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Inmuebles\Schemas;
 
+use App\Models\Inmueble;
 use App\Models\Usuario;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,23 +15,61 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Forms\Components\Hidden;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Spatie\MediaLibrary\MediaCollections\File;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
+use App\Services\ImageWatermarkService;
 use Filament\Forms\Components\FileUpload;
-use Intervention\Image\Facades\Image;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Alignment;
 
 class InmuebleForm
 {
+    /**
+     * Ruta relativa a la raíz del disco `public` (p. ej. fotos/archivo.jpg).
+     * Filament usa esta ruta en exists() y en las URLs de vista previa.
+     */
+    private static function normalizeFotoDiskPath(mixed $state): ?string
+    {
+        if (is_array($state)) {
+            $state = Arr::first($state);
+        }
+
+        if (! is_string($state) || blank($state)) {
+            return null;
+        }
+
+        $path = str_replace('\\', '/', trim($state));
+        $path = ltrim(str_replace('fotos/', '', $path), '/');
+
+        return filled($path) ? 'fotos/' . $path : null;
+    }
+
+    /**
+     * URL relativa al mismo origen del panel (evita que FilePond falle si APP_URL
+     * no coincide con el host del navegador, p. ej. localhost vs 127.0.0.1).
+     */
+    private static function fotoPublicUrl(string $diskPath): string
+    {
+        return '/storage/' . ltrim(str_replace('\\', '/', $diskPath), '/');
+    }
+
+    private static function fotoMimeType(string $diskPath): string
+    {
+        return match (strtolower(pathinfo($diskPath, PATHINFO_EXTENSION))) {
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/jpeg',
+        };
+    }
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
         ->components([
-            Tabs::make('Formulario inmueble')
+            Tabs::make('Tabs')
+                ->scrollable()
                 ->tabs([
                     Tab::make('Datos generales')
                         ->schema([
@@ -54,6 +94,21 @@ class InmuebleForm
                                                 Toggle::make('iva')->label('IVA'),
                                             ])
                                             ->columnSpanFull(),
+                                        Select::make('badge_status')
+                                            ->label('Etiqueta Comercial')
+                                            ->options(Inmueble::BADGE_STATUS_OPCIONES)
+                                            ->placeholder('Sin etiqueta')
+                                            ->native(false)
+                                            ->nullable()
+                                            ->prefixIcon('heroicon-o-tag')
+                                            ->helperText('Se muestra sobre la foto en la web pública.'),
+                                        DatePicker::make('contract_end_date')
+                                            ->label('Fecha de Desocupación / Vencimiento')
+                                            ->native(false)
+                                            ->displayFormat('d/m/Y')
+                                            ->nullable()
+                                            ->prefixIcon('heroicon-o-calendar-days')
+                                            ->helperText('Selecciona la fecha en la que se entregará el inmueble para calcular automáticamente el tiempo de espera en la web.'),
                                         // IZQUIERDA: Campos principales
                                         Select::make('tipo_fk')
                                             ->label('Tipo inmueble')
@@ -294,47 +349,126 @@ class InmuebleForm
                         ])
                         ->columnSpanFull(),
 
-
-
-                    Tab::make('Fotografías y videos')
+                    Tab::make('Galería')
                         ->schema([
-                                    Repeater::make('fotoInmueble') // Nombre del campo de relación en el modelo Inmueble
-                                        ->relationship('fotoInmueble') // Nombre de la relación en el modelo Inmueble
+                                    Repeater::make('fotoInmueble')
+                                        ->relationship('fotoInmueble')
                                         ->schema([
-                                            FileUpload::make('foto') // Nombre del campo en el modelo FotoInmueble
-                                                //->extraAttributes(['data-watermark-field' => 'foto'])
+                                            FileUpload::make('foto')
+                                                ->label('Foto')
                                                 ->image()
-                                                //->hiddenLabel()
                                                 ->disk('public')
                                                 ->directory('fotos')
                                                 ->visibility('public')
-                                                ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file): string {
-                                                    return Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+                                                ->imagePreviewHeight('140px')
+                                                ->panelLayout('compact')
+                                                ->extraAttributes([
+                                                    'class' => 'inmueble-foto-upload',
+                                                ])
+                                                ->columnSpanFull()
+                                                ->openable()
+                                                ->previewable()
+                                                ->fetchFileInformation(false)
+                                                ->getUploadedFileUsing(function (
+                                                    FileUpload $component,
+                                                    string $file,
+                                                    string | array | null $storedFileNames,
+                                                ): ?array {
+                                                    $path = self::normalizeFotoDiskPath($file) ?? $file;
+                                                    $storage = $component->getDisk();
+
+                                                    if (! $storage->exists($path)) {
+                                                        return null;
+                                                    }
+
+                                                    return [
+                                                        'name' => ($component->isMultiple()
+                                                            ? ($storedFileNames[$file] ?? null)
+                                                            : $storedFileNames) ?? basename($path),
+                                                        'size' => $storage->size($path),
+                                                        'type' => self::fotoMimeType($path),
+                                                        'url' => self::fotoPublicUrl($path),
+                                                    ];
+                                                })
+                                                ->getOpenableFileUrlUsing(
+                                                    fn (string $file): string => self::fotoPublicUrl(
+                                                        self::normalizeFotoDiskPath($file) ?? $file,
+                                                    ),
+                                                )
+                                                ->afterStateHydrated(function (FileUpload $component, string | array | null $state): void {
+                                                    $disk = $component->getDisk();
+                                                    $files = [];
+
+                                                    foreach (Arr::wrap($state) as $key => $file) {
+                                                        if (! is_string($file) || blank($file)) {
+                                                            continue;
+                                                        }
+
+                                                        $path = self::normalizeFotoDiskPath($file);
+
+                                                        if (blank($path) || ! $disk->exists($path)) {
+                                                            continue;
+                                                        }
+
+                                                        $files[is_numeric($key) ? (string) Str::uuid() : $key] = $path;
+                                                    }
+
+                                                    $component->rawState($files);
+                                                })
+                                                ->saveUploadedFileUsing(function (TemporaryUploadedFile $file): string {
+                                                    return app(ImageWatermarkService::class)->applyToUploadedFile(
+                                                        $file,
+                                                        disk: 'public',
+                                                        directory: 'fotos',
+                                                    );
                                                 })
                                                 ->imageEditor()
                                                 ->required()
-                                                ->dehydrated(fn ($state) => filled($state)) // No vacía el campo si ya tiene valor
-                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg']) // Restringe los tipos de archivo a imágenes
+                                                ->dehydrated(fn ($state) => filled($state))
+                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
                                                 ->validationMessages([
                                                     'required' => 'La foto es obligatoria.',
                                                     'mimetypes' => 'El archivo debe ser un formato de imagen válido (JPEG, PNG, JPG).',
                                                     'mimes' => 'Solo se permiten archivos con extensión .jpg, .jpeg o .png.',
                                                 ]),
 
-                                            // Campo oculto para la posición
                                             Hidden::make('posicion')
                                                 ->dehydrated(true),
                                         ])
-                                        ->grid(4) // Vista tipo galería
-                                        ->orderColumn('posicion') // Mantiene el orden al editar
+                                        ->grid(4)
+                                        ->orderColumn('posicion')
+                                        ->reorderableWithDragAndDrop()
+                                        ->collapsible()
                                         ->addActionLabel('Agregar nueva foto')
-                                        // Para que el encabezado de cada foto se vea limpio
-                                        //->itemLabel(fn (array $state): ?string => "Posición: " . ($state['posicion'] ?? 'N/A')),
+                                        ->itemLabel(function (array $state): ?string {
+                                            $foto = $state['foto'] ?? null;
+
+                                            if (is_array($foto)) {
+                                                $foto = Arr::first($foto);
+                                            }
+
+                                            return filled($foto)
+                                                ? 'Foto #' . ($state['posicion'] ?? '—')
+                                                : 'Nueva foto';
+                                        }),
 
                         ])
                         ->columnSpanFull(),
+
+                    Tab::make('Video')
+                        ->schema([
+                            TextInput::make('video')
+                                ->label('Enlace de video')
+                                ->url()
+                                ->nullable()
+                                ->maxLength(500)
+                                ->placeholder('Ej: https://www.youtube.com/watch?v=...')
+                                ->helperText('Puedes pegar un enlace de YouTube o Vimeo.')
+                                ->columnSpanFull(),
+                        ])
+                        ->columnSpanFull(),
                 ])
-                ->columnSpanFull()
+                ->columnSpanFull(),
         ]);
 
     }

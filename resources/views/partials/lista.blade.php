@@ -1,5 +1,5 @@
 @php
-    $layoutClass = match ($layout ?? 'list') {
+    $layoutClass = match ($layout ?? 'grid-three') {
         'grid' => 'grid-layout',
         'grid-three' => 'grid-layout-three',
         default => 'list-layout',

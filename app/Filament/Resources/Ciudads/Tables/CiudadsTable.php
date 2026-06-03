@@ -8,6 +8,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 
@@ -21,6 +22,9 @@ class CiudadsTable
                     ->label('Ciudad')
                     ->searchable()
                     ->sortable(),
+
+                ToggleColumn::make('has_office')
+                    ->label('¿Tiene Oficina?'),
 
                 TextColumn::make('whatsapp_arriendo')
                     ->label('WA Arriendos')

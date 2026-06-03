@@ -9,20 +9,28 @@
         $fotoUrl = 'https://www.paseoespanainmobiliaria.com/' . ltrim($inmueble->fotos->first()->foto, '/');
     }
 
+    // Sufijo "+ IVA" cuando el inmueble está marcado con IVA (locales, oficinas, etc.).
+    // El "+ IVA" NO se aplica al precio de venta.
+    $ivaSuffix = ! empty($inmueble->iva) ? ' + IVA' : '';
+
     $precioSecundario = null;
+    $ivaPrincipal = '';
     if (! isset($precio)) {
         $modoPrecio = $modo ?? 'auto';
 
         if ($modoPrecio === 'arriendo') {
-            $precio = '$' . str_replace(',', '.', number_format(($inmueble->valor_arriendo + $inmueble->administracion)));
+            $precio = '$' . number_format($inmueble->valor_arriendo, 0, ',', '.');
+            $ivaPrincipal = $ivaSuffix;
         } elseif ($modoPrecio === 'venta') {
             $precio = '$' . number_format($inmueble->valor_venta, 0, ',', '.');
         } else {
             if ($inmueble->arriendo && $inmueble->venta) {
-                $precio = '$' . str_replace(',', '.', number_format($inmueble->valor_arriendo + $inmueble->administracion));
-                $precioSecundario = '$' . str_replace(',', '.', number_format($inmueble->valor_venta));
+                $precio = '$' . number_format($inmueble->valor_arriendo, 0, ',', '.');
+                $precioSecundario = '$' . number_format($inmueble->valor_venta, 0, ',', '.');
+                $ivaPrincipal = $ivaSuffix;
             } elseif ($inmueble->arriendo) {
-                $precio = '$' . str_replace(',', '.', number_format($inmueble->valor_arriendo + $inmueble->administracion));
+                $precio = '$' . number_format($inmueble->valor_arriendo, 0, ',', '.');
+                $ivaPrincipal = $ivaSuffix;
             } elseif ($inmueble->venta) {
                 $precio = '$' . number_format($inmueble->valor_venta, 0, ',', '.');
             } else {
@@ -42,6 +50,13 @@
     $parqueaderosTexto = empty($inmueble->garajes)
         ? 'N/A'
         : $inmueble->garajes . ' ' . ((int) $inmueble->garajes === 1 ? 'pqdo.' : 'pqdos.');
+
+    $badgeStatusClass = match ($inmueble->badge_status ?? null) {
+        'OPORTUNIDAD' => 'pe-property-card__badge--oportunidad',
+        'NEGOCIABLE' => 'pe-property-card__badge--negociable',
+        'BAJO_DE_PRECIO' => 'pe-property-card__badge--bajo-precio',
+        default => null,
+    };
 @endphp
 
 <article class="pe-property-card">
@@ -62,15 +77,30 @@
             </div>
         @endif
 
+        @if($inmueble->disponibilidad_texto)
+            <span class="pe-property-card__badge pe-property-card__badge--disponibilidad">
+                {{ $inmueble->disponibilidad_texto }}
+            </span>
+        @endif
+
         <div class="pe-property-card__badges">
-            @if($esNuevo)
-                <span class="pe-property-card__badge pe-property-card__badge--new">Nuevo</span>
-            @endif
-            <span class="pe-property-card__badge pe-property-card__badge--code">Código: {{ $inmueble->codigo }}</span>
+            <div class="pe-property-card__badges-start">
+                @if($inmueble->badge_status_etiqueta && $badgeStatusClass)
+                    <span class="pe-property-card__badge {{ $badgeStatusClass }}">
+                        {{ $inmueble->badge_status_etiqueta }}
+                    </span>
+                @endif
+            </div>
+            <div class="pe-property-card__badges-end">
+                @if($esNuevo)
+                    <span class="pe-property-card__badge pe-property-card__badge--new">Nuevo</span>
+                @endif
+                <span class="pe-property-card__badge pe-property-card__badge--code">Código: {{ $inmueble->codigo }}</span>
+            </div>
         </div>
 
         <span class="pe-property-card__price">
-            {{ $precio }}
+            {{ $precio }}{{ $ivaPrincipal }}
             @if($precioSecundario)
                 <small class="pe-property-card__price-alt">Venta {{ $precioSecundario }}</small>
             @endif
@@ -99,10 +129,12 @@
                 <i class="sl sl-icon-drop" aria-hidden="true" title="Baños"></i>
                 <span>{{ $inmueble->no_banos }} {{ (int) $inmueble->no_banos === 1 ? 'baño' : 'baños' }}</span>
             </li>
-            <li>
-                <i class="fa fa-bed" aria-hidden="true" title="Alcobas"></i>
-                <span>{{ $alcobasTexto }}</span>
-            </li>
+            @if(! empty($inmueble->no_alcobas))
+                <li>
+                    <i class="fa fa-bed" aria-hidden="true" title="Alcobas"></i>
+                    <span>{{ $alcobasTexto }}</span>
+                </li>
+            @endif
             @if($inmueble->garajes)
                 <li>
                     <i class="fa fa-car" aria-hidden="true" title="Parqueaderos"></i>

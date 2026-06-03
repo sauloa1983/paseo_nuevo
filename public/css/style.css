@@ -559,7 +559,7 @@ ul.footer-links {
 .copyrights {
 	color: #707070;
 	border-top: 1px solid rgba(0,0,0,0.09);
-	margin-top: 60px;
+	/*margin-top: 60px;*/
 	text-align: center;
 	padding: 40px 0;
 	display: inline-block;
@@ -2169,7 +2169,7 @@ body .search-container button:before {
 }
 
 .main-search-form {
-	width: 660px;
+	width: 960px;
 	display: block;
 	margin: 0 auto;
 	position: relative;

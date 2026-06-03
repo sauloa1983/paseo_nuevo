@@ -5,8 +5,8 @@
 
 			<div class="col-md-12">
                 <h3 class="headline centered margin-bottom-40 margin-top-10">
-                    Socios Estratégicos
-                    <span>Alianzas estratégicas que garantizan tu tranquilidad!</span>
+                    Alianzas estratégicas que garantizan tu tranquilidad!
+                    <!--<span>Alianzas estratégicas que garantizan tu tranquilidad!</span>-->
                 </h3>
             </div>
 

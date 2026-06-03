@@ -63,16 +63,73 @@ $(document).ready(function(){
 	/*  Sticky Header
 	/*----------------------------------------------------*/
 	$( "#header" ).not( "#header-container.header-style-2 #header" ).clone(true).addClass('cloned unsticky').insertAfter( "#header" );
-	$( "#navigation.style-2" ).clone(true).addClass('cloned unsticky').insertAfter( "#navigation.style-2" );
 
-	// Logo for header style 2
-	$( "#logo .sticky-logo" ).clone(true).prependTo("#navigation.style-2.cloned ul#responsive");
+	if (!$("#header-container").hasClass("pe-navbar")) {
+		$( "#navigation.style-2" ).clone(true).addClass('cloned unsticky').insertAfter( "#navigation.style-2" );
 
+		// Logo for header style 2
+		$( "#logo .sticky-logo" ).clone(true).prependTo("#navigation.style-2.cloned ul#responsive");
+	}
 
-	// sticky header script
+	function initPeNavbarSticky() {
+		var $container = $("#header-container.pe-navbar");
+		if (!$container.length) {
+			return;
+		}
+
+		var $mainNav = $container.find("#header.pe-main-navbar");
+		var $topBar = $container.find("#top-bar");
+		var $spacer = $("<div>", { class: "pe-navbar-spacer", "aria-hidden": "true" });
+
+		function navHeight() {
+			return $mainNav.outerHeight() || 0;
+		}
+
+		function topBarHeight() {
+			return $topBar.outerHeight() || 0;
+		}
+
+		function syncSpacer() {
+			if ($mainNav.hasClass("is-sticky")) {
+				$spacer.height(navHeight());
+			}
+		}
+
+		function toggleStickyNav() {
+			var shouldStick = $(window).scrollTop() >= topBarHeight();
+
+			$("body").toggleClass("pe-navbar-is-sticky", shouldStick);
+
+			if (shouldStick) {
+				if (!$mainNav.hasClass("is-sticky")) {
+					$mainNav.addClass("is-sticky");
+					$spacer.insertAfter($mainNav).height(navHeight());
+				} else {
+					syncSpacer();
+				}
+			} else if ($mainNav.hasClass("is-sticky")) {
+				$mainNav.removeClass("is-sticky");
+				$spacer.remove();
+			}
+		}
+
+		$(window).on("scroll.peNavbarSticky resize.peNavbarSticky", function () {
+			toggleStickyNav();
+		});
+
+		toggleStickyNav();
+	}
+
+	initPeNavbarSticky();
+
+	// sticky header script (legacy theme — no aplica a pe-navbar)
 	var headerOffset = $("#header-container").height() * 2; // height on which the sticky header will shows
 
 	$(window).scroll(function(){
+		if ($("#header-container").hasClass("pe-navbar")) {
+			return;
+		}
+
 		if($(window).scrollTop() >= headerOffset){
 			$("#header.cloned").addClass('sticky').removeClass("unsticky");
 			$("#navigation.style-2.cloned").addClass('sticky').removeClass("unsticky");
@@ -169,7 +226,7 @@ $(document).ready(function(){
 			var attrColor = $(this).attr('data-color');
 			var attrOpacity = $(this).attr('data-color-opacity');
 
-	        if(attrImage !== undefined) {
+	        if(attrImage !== undefined && attrImage !== '' && !$(this).hasClass('parallax--has-video')) {
 	            $(this).css('background-image', 'url('+attrImage+')');
 	        }
 
@@ -591,15 +648,7 @@ $(document).ready(function(){
     /*  Owl Carousel
     /*----------------------------------------------------*/
 
-	$('.carousel').owlCarousel({
-		autoPlay: false,
-		navigation: true,
-		slideSpeed: 600,
-		items : 3,
-		itemsDesktop : [1239,3],
-		itemsTablet : [991,2],
-		itemsMobile : [767,1]
-	});
+	/* La home usa Slick en .carousel (ver front/index.blade.php). */
 
 
 	$('.logo-carousel').owlCarousel({
@@ -632,7 +681,9 @@ $(document).ready(function(){
     /*----------------------------------------------------*/
     /*  Slick Carousel
     /*----------------------------------------------------*/
-	 $('.property-slider').slick({
+	 $('.property-slider').filter(function () {
+		return $(this).closest('.pe-gallery--in-column').length === 0;
+	 }).slick({
 		slidesToShow: 1,
 		slidesToScroll: 1,
 		arrows: true,
@@ -643,7 +694,9 @@ $(document).ready(function(){
 		 adaptiveHeight: true
 	});
 
-	$('.property-slider-nav').slick({
+	$('.property-slider-nav').filter(function () {
+		return ! $(this).hasClass('pe-gallery-thumbs');
+	}).slick({
 		slidesToShow: 6,
 		slidesToScroll: 1,
 		asNavFor: '.property-slider',
@@ -726,12 +779,19 @@ $(document).ready(function(){
 		 overflowY: 'auto',
 
 		 closeBtnInside: false,
+		 showCloseBtn: true,
+		 closeMarkup: '<button title="Cerrar (Esc)" type="button" class="mfp-close pe-mfp-close" aria-label="Cerrar"><i class="fa fa-times" aria-hidden="true"></i></button>',
 		 preloader: true,
 
 		 removalDelay: 0,
 		 mainClass: 'mfp-fade',
 
-		 gallery:{enabled:true}
+		 gallery: {
+			enabled: true,
+			arrows: true,
+			navigateByImgClick: true,
+			arrowMarkup: '<button title="%title%" type="button" class="mfp-arrow mfp-arrow-%dir% pe-mfp-arrow" aria-label="%title%"><i class="fa fa-angle-%dir%" aria-hidden="true"></i></button>',
+		 }
 	});
 
 

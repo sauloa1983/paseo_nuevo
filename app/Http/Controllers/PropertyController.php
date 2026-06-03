@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\PromotionalVideo;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,26 +23,27 @@ class PropertyController extends Controller
             ->pluck('nombre', 'id');
 
 
-        $query = Property::query()->where('estado', 0);  // ← Primero (más selectivo)
+        $query = Property::query()
+            ->where('estado', 0)        // ← Primero (más selectivo)
+            ->conDatosCompletos();      // Excluye inmuebles "N/A" (sin tipo ni precio válido)
 
             // Defino variables
             $precioCampo = $request->status == 'rent' ? 'valor_arriendo' : 'valor_venta';
-            $sumarAdmin  = false; // valor por defecto
 
             // 🔍 FILTRO STATUS (rent/sale)
             if ($request->filled('status')) {
                 if ($request->status === 'rent') {
                     $query->where('arriendo', 1);
+                    $query->where('valor_arriendo', '>', 0); // precio de arriendo válido
                     $precioCampo = 'valor_arriendo';
-                    $sumarAdmin = true;
                 } elseif ($request->status === 'sale') {
                     $query->where('venta', 1);
+                    $query->where('valor_venta', '>', 0); // precio de venta válido
                     $precioCampo = 'valor_venta';
-                    $sumarAdmin = false;
                 }
             }
 
-            // Min/Max precio (limpios)
+            // Min/Max precio (limpios). Un 0 o vacío se considera "sin filtro".
             $min_price = $request->filled('min_price')
                 ? (int) str_replace('.', '', $request->min_price)
                 : null;
@@ -49,22 +51,56 @@ class PropertyController extends Controller
                 ? (int) str_replace('.', '', $request->max_price)
                 : null;
 
-            // Filtros precio (con/sin admin)
-            if ($min_price) {
-                if ($sumarAdmin) {
-                    // ARRIENDO: valor_arriendo + admin >= min_price
-                    $query->whereRaw("(valor_arriendo + COALESCE(administracion, 0)) >= ?", [$min_price]);
+            // Evita que un 0 que llegue por la URL rompa el filtrado.
+            if ($min_price !== null && $min_price <= 0) {
+                $min_price = null;
+            }
+            if ($max_price !== null && $max_price <= 0) {
+                $max_price = null;
+            }
+
+            // Filtro por precio. La administración NUNCA se suma al precio principal.
+            if ($min_price !== null || $max_price !== null) {
+                if ($request->filled('status')) {
+                    // Con status definido: filtra sobre el campo de precio correspondiente.
+                    if ($min_price !== null) {
+                        $query->where($precioCampo, '>=', $min_price);
+                    }
+                    if ($max_price !== null) {
+                        $query->where($precioCampo, '<=', $max_price);
+                    }
                 } else {
-                    $query->where($precioCampo, '>=', $min_price);
+                    // Sin status: el rango debe coincidir con arriendo O con venta.
+                    $query->where(function ($q) use ($min_price, $max_price) {
+                        $q->where(function ($sub) use ($min_price, $max_price) {
+                            $sub->where('valor_arriendo', '>', 0);
+                            if ($min_price !== null) {
+                                $sub->where('valor_arriendo', '>=', $min_price);
+                            }
+                            if ($max_price !== null) {
+                                $sub->where('valor_arriendo', '<=', $max_price);
+                            }
+                        })->orWhere(function ($sub) use ($min_price, $max_price) {
+                            $sub->where('valor_venta', '>', 0);
+                            if ($min_price !== null) {
+                                $sub->where('valor_venta', '>=', $min_price);
+                            }
+                            if ($max_price !== null) {
+                                $sub->where('valor_venta', '<=', $max_price);
+                            }
+                        });
+                    });
                 }
             }
 
-            if ($max_price) {
-                if ($sumarAdmin) {
-                    // ARRIENDO: valor_arriendo + admin <= max_price
-                    $query->whereRaw("(valor_arriendo + COALESCE(administracion, 0)) <= ?", [$max_price]);
-                } else {
-                    $query->where($precioCampo, '<=', $max_price);
+            // 🔍 FILTRO ADMINISTRACIÓN (con / sin administración)
+            if ($request->filled('admon')) {
+                if ($request->admon === 'con') {
+                    $query->where('administracion', '>', 0);
+                } elseif ($request->admon === 'sin') {
+                    $query->where(function ($q) {
+                        $q->whereNull('administracion')->orWhere('administracion', 0);
+                    });
                 }
             }
 
@@ -78,9 +114,10 @@ class PropertyController extends Controller
             if ($request->filled('barrio')) {
                 $query->where('barrio_fk', $request->barrio);
             }
-            //Busca por tipo inmueble
-            if ($request->filled( 'type')) {
-                $query->where('tipo_fk', $request->type);
+            // Busca por uno o varios tipos de inmueble
+            $typeIds = array_filter(array_map('intval', (array) $request->input('type', [])));
+            if (! empty($typeIds)) {
+                $query->whereIn('tipo_fk', $typeIds);
             }
             //Busca por habitaciones
             $rooms = $request->rooms;
@@ -91,6 +128,18 @@ class PropertyController extends Controller
             $bathrooms = $request->bathrooms;
             if (!empty($bathrooms)) {
                 $query->where('no_banos', $bathrooms);
+            }
+            // Busca por parqueadero (campo garajes = número de cupos)
+            if ($request->filled('garaje')) {
+                if ($request->garaje === '0') {
+                    // Sin parqueadero
+                    $query->where(function ($q) {
+                        $q->whereNull('garajes')->orWhere('garajes', 0);
+                    });
+                } else {
+                    // N cupos o más
+                    $query->where('garajes', '>=', (int) $request->garaje);
+                }
             }
             // Buscar por área mínima y máxima
             $min_area = $request->filled('min_area')
@@ -150,13 +199,13 @@ class PropertyController extends Controller
 
             if ($order === 'precio_asc') {
             if ($request->status == 'rent') {
-                $query->orderByRaw('COALESCE(valor_arriendo + administracion, valor_arriendo) ASC');
+                $query->orderBy('valor_arriendo', 'asc');
             } else {
                 $query->orderBy('valor_venta', 'asc');
             }
             } elseif ($order === 'precio_desc') {
             if ($request->status == 'rent') {
-                $query->orderByRaw('COALESCE(valor_arriendo + administracion, valor_arriendo) DESC');
+                $query->orderBy('valor_arriendo', 'desc');
             } else {
                 $query->orderBy('valor_venta', 'desc');
             }
@@ -193,7 +242,7 @@ class PropertyController extends Controller
         ]);*/
 
         //Forma de mostrar el layaout
-        $layout = $request->input('layout', 'list'); // predeterminado: list
+        $layout = $request->input('layout', 'grid-three');
 
         return view('front.inmuebles', compact('properties', 'tipos_inm', 'ciudades', 'layout'));
     }
@@ -201,7 +250,9 @@ class PropertyController extends Controller
     public function show($inmueble)
     {
          ////////// INMUEBLES SIMILARES ///////////
-        $property = Property::where('codigo', $inmueble)->firstOrFail();
+        $property = Property::where('codigo', $inmueble)
+            ->with('asesorData')
+            ->firstOrFail();
 
         $property_val = $property->arriendo == "1"
             ? 'arriendo'
@@ -212,8 +263,13 @@ class PropertyController extends Controller
             : ($property->venta == "1" ? 'valor_venta' : null);
 
         if (!$property_val || !$property_price) {
-            // Evita errores si no hay ni arriendo ni venta definidos
-            return view('front.inmuebles.show', compact('property', 'similarProperties'));
+            $similarProperties = collect();
+            $promotionalVideo = PromotionalVideo::query()
+                ->where('is_active', true)
+                ->inRandomOrder()
+                ->first();
+
+            return view('front.inmuebles.show', compact('property', 'similarProperties', 'promotionalVideo'));
         }
         // Rango de precio (por ejemplo, ±20%)
         $minPrice = $property->$property_price * 0.8;
@@ -248,7 +304,12 @@ class PropertyController extends Controller
             ->get();
         //dd($property_featured);
 
-        return view('front.inmuebles.show', compact('property','similarProperties', 'property_featured'));
+        $promotionalVideo = PromotionalVideo::query()
+            ->where('is_active', true)
+            ->inRandomOrder()
+            ->first();
+
+        return view('front.inmuebles.show', compact('property', 'similarProperties', 'property_featured', 'promotionalVideo'));
     }
 
 }
