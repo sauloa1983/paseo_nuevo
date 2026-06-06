@@ -150,6 +150,35 @@
         background-color: #f3f4f6 !important;
     }
 
+    /*
+     * Galería inmueble: miniaturas cuadradas en cuadrícula (4 columnas).
+     * Solo ancho de ítems + ocultar metadatos; la altura la fija imagePreviewHeight.
+     */
+    .fi-fo-file-upload.inmueble-galeria-upload .filepond--root[data-style-panel-layout=grid] .filepond--item {
+        width: calc(25% - 0.5rem);
+    }
+
+    @media (max-width: 1024px) {
+        .fi-fo-file-upload.inmueble-galeria-upload .filepond--root[data-style-panel-layout=grid] .filepond--item {
+            width: calc(33.33% - 0.5rem);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .fi-fo-file-upload.inmueble-galeria-upload .filepond--root[data-style-panel-layout=grid] .filepond--item {
+            width: calc(50% - 0.5rem);
+        }
+    }
+
+    .fi-fo-file-upload.inmueble-galeria-upload .filepond--file-info,
+    .fi-fo-file-upload.inmueble-galeria-upload .filepond--file-status {
+        display: none !important;
+    }
+
+    .fi-fo-file-upload.inmueble-galeria-upload .filepond--item-panel {
+        background-color: #4b5563 !important;
+    }
+
     .fi-page-content {
         background: #ffffff !important;
         border-radius: 18px !important;
@@ -167,67 +196,6 @@
         border-radius: 14px !important;
         border: 1px solid #e5e7eb !important;
         box-shadow: none !important;
-    }
-
-    /*
-     * Fotos inmueble (Repeater 4 columnas): la miniatura ocupa todo el ancho
-     * de la celda, sin cuadro negro pequeño al centro.
-     */
-    .fi-fo-file-upload.inmueble-foto-upload {
-        width: 100%;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--root {
-        width: 100% !important;
-        margin-bottom: 0;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--list {
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--item {
-        width: 100% !important;
-        margin: 0 !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--file-wrapper,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--file {
-        width: 100% !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--image-preview-wrapper,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--image-preview,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--item-panel {
-        background-color: #f3f4f6 !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--image-preview {
-        height: 140px !important;
-        min-height: 140px !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--image-preview img,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--image-preview canvas {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--panel-root,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--panel-center {
-        background-color: transparent !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--file-info {
-        background: rgba(255, 255, 255, 0.92) !important;
-    }
-
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--file-info-main,
-    .fi-fo-file-upload.inmueble-foto-upload .filepond--file-info-sub {
-        color: #374151 !important;
     }
 
     /*

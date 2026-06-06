@@ -47,6 +47,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Paseo España Inmobiliaria')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('4rem')
+            ->favicon(asset('favicon.ico'))
             ->sidebarCollapsibleOnDesktop()
             ->collapsedSidebarWidth('5.75rem')
             ->maxContentWidth(Width::Full) // Muestra el contenido al 100% del ancho

@@ -2,11 +2,11 @@
 
 namespace App\Filament\Resources\Inmuebles\Schemas;
 
+use App\Models\FotoInmueble;
 use App\Models\Inmueble;
 use App\Models\Usuario;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Components\Hidden;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -25,6 +24,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use App\Services\ImageWatermarkService;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Collection;
 
 class InmuebleForm
 {
@@ -65,6 +65,79 @@ class InmuebleForm
             'webp' => 'image/webp',
             default => 'image/jpeg',
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function galeriaPathsFromRecord(Inmueble $inmueble): array
+    {
+        return $inmueble->fotoInmueble()
+            ->orderBy('posicion')
+            ->get()
+            ->map(fn (FotoInmueble $foto): ?string => self::normalizeFotoDiskPath($foto->foto))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $paths
+     */
+    public static function syncGaleriaFotos(Inmueble $inmueble, array $paths): void
+    {
+        /** @var Collection<int, string> $orderedPaths */
+        $orderedPaths = collect($paths)
+            ->map(fn (mixed $path): ?string => self::normalizeFotoDiskPath($path))
+            ->filter()
+            ->values();
+
+        /** @var Collection<string, FotoInmueble> $existingByPath */
+        $existingByPath = $inmueble->fotoInmueble()
+            ->get()
+            ->mapWithKeys(function (FotoInmueble $foto): array {
+                $path = self::normalizeFotoDiskPath($foto->foto);
+
+                return $path ? [$path => $foto] : [];
+            });
+
+        foreach ($existingByPath as $path => $foto) {
+            if (! $orderedPaths->contains($path)) {
+                $foto->delete();
+            }
+        }
+
+        foreach ($orderedPaths as $index => $path) {
+            $posicion = $index + 1;
+
+            if ($existingByPath->has($path)) {
+                $existingByPath[$path]->update(['posicion' => $posicion]);
+
+                continue;
+            }
+
+            FotoInmueble::create([
+                'inmueble_fk' => $inmueble->id,
+                'foto' => $path,
+                'posicion' => $posicion,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function existingGaleriaPathsFromLivewire(mixed $livewire): array
+    {
+        if (! is_object($livewire) || ! isset($livewire->record)) {
+            return [];
+        }
+
+        if (! $livewire->record instanceof Inmueble) {
+            return [];
+        }
+
+        return self::galeriaPathsFromRecord($livewire->record);
     }
 
     public static function configure(Schema $schema): Schema
@@ -376,107 +449,109 @@ class InmuebleForm
 
                     Tab::make('Galería')
                         ->schema([
-                                    Repeater::make('fotoInmueble')
-                                        ->relationship('fotoInmueble')
-                                        ->schema([
-                                            FileUpload::make('foto')
-                                                ->label('Foto')
-                                                ->image()
-                                                ->disk('public')
-                                                ->directory('fotos')
-                                                ->visibility('public')
-                                                ->imagePreviewHeight('140px')
-                                                ->panelLayout('compact')
-                                                ->extraAttributes([
-                                                    'class' => 'inmueble-foto-upload',
-                                                ])
-                                                ->columnSpanFull()
-                                                ->openable()
-                                                ->previewable()
-                                                ->fetchFileInformation(false)
-                                                ->getUploadedFileUsing(function (
-                                                    FileUpload $component,
-                                                    string $file,
-                                                    string | array | null $storedFileNames,
-                                                ): ?array {
-                                                    $path = self::normalizeFotoDiskPath($file) ?? $file;
-                                                    $storage = $component->getDisk();
+                            FileUpload::make('galeria_fotos')
+                                ->label('Fotos del inmueble')
+                                ->multiple()
+                                ->reorderable()
+                                ->appendFiles()
+                                ->image()
+                                ->disk('public')
+                                ->directory('fotos')
+                                ->visibility('public')
+                                ->panelLayout('grid')
+                                ->imagePreviewHeight('150')
+                                ->removeUploadedFileButtonPosition('left top')
+                                ->uploadButtonPosition('right top')
+                                ->uploadProgressIndicatorPosition('right top')
+                                ->loadingIndicatorPosition('right top')
+                                ->extraAttributes([
+                                    'class' => 'inmueble-galeria-upload',
+                                ])
+                                ->extraAlpineAttributes([
+                                    'x-intersect:enter' => '$nextTick(() => document.dispatchEvent(new Event(\'visibilitychange\')))',
+                                ])
+                                ->columnSpanFull()
+                                ->openable()
+                                ->previewable()
+                                ->deletable()
+                                ->fetchFileInformation(false)
+                                ->helperText('Arrastra varias fotos a la vez o reordénalas arrastrándolas. La primera foto será la portada.')
+                                ->getUploadedFileUsing(function (
+                                    FileUpload $component,
+                                    string $file,
+                                    string | array | null $storedFileNames,
+                                ): ?array {
+                                    $path = self::normalizeFotoDiskPath($file) ?? $file;
+                                    $storage = $component->getDisk();
 
-                                                    if (! $storage->exists($path)) {
-                                                        return null;
-                                                    }
+                                    if (! $storage->exists($path)) {
+                                        return null;
+                                    }
 
-                                                    return [
-                                                        'name' => ($component->isMultiple()
-                                                            ? ($storedFileNames[$file] ?? null)
-                                                            : $storedFileNames) ?? basename($path),
-                                                        'size' => $storage->size($path),
-                                                        'type' => self::fotoMimeType($path),
-                                                        'url' => self::fotoPublicUrl($path),
-                                                    ];
-                                                })
-                                                ->getOpenableFileUrlUsing(
-                                                    fn (string $file): string => self::fotoPublicUrl(
-                                                        self::normalizeFotoDiskPath($file) ?? $file,
-                                                    ),
-                                                )
-                                                ->afterStateHydrated(function (FileUpload $component, string | array | null $state): void {
-                                                    $disk = $component->getDisk();
-                                                    $files = [];
+                                    return [
+                                        'name' => 'Foto',
+                                        'size' => $storage->size($path),
+                                        'type' => self::fotoMimeType($path),
+                                        'url' => self::fotoPublicUrl($path),
+                                    ];
+                                })
+                                ->getOpenableFileUrlUsing(
+                                    fn (string $file): string => self::fotoPublicUrl(
+                                        self::normalizeFotoDiskPath($file) ?? $file,
+                                    ),
+                                )
+                                ->afterStateHydrated(function (FileUpload $component, string | array | null $state): void {
+                                    $disk = $component->getDisk();
+                                    $files = [];
 
-                                                    foreach (Arr::wrap($state) as $key => $file) {
-                                                        if (! is_string($file) || blank($file)) {
-                                                            continue;
-                                                        }
+                                    foreach (Arr::wrap($state) as $key => $file) {
+                                        if (! is_string($file) || blank($file)) {
+                                            continue;
+                                        }
 
-                                                        $path = self::normalizeFotoDiskPath($file);
+                                        $path = self::normalizeFotoDiskPath($file);
 
-                                                        if (blank($path) || ! $disk->exists($path)) {
-                                                            continue;
-                                                        }
+                                        if (blank($path) || ! $disk->exists($path)) {
+                                            continue;
+                                        }
 
-                                                        $files[is_numeric($key) ? (string) Str::uuid() : $key] = $path;
-                                                    }
+                                        $files[is_numeric($key) ? (string) Str::uuid() : $key] = $path;
+                                    }
 
-                                                    $component->rawState($files);
-                                                })
-                                                ->saveUploadedFileUsing(function (TemporaryUploadedFile $file): string {
-                                                    return app(ImageWatermarkService::class)->applyToUploadedFile(
-                                                        $file,
-                                                        disk: 'public',
-                                                        directory: 'fotos',
-                                                    );
-                                                })
-                                                ->imageEditor()
-                                                ->required()
-                                                ->dehydrated(fn ($state) => filled($state))
-                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg'])
-                                                ->validationMessages([
-                                                    'required' => 'La foto es obligatoria.',
-                                                    'mimetypes' => 'El archivo debe ser un formato de imagen válido (JPEG, PNG, JPG).',
-                                                    'mimes' => 'Solo se permiten archivos con extensión .jpg, .jpeg o .png.',
-                                                ]),
+                                    $component->rawState($files);
+                                })
+                                ->saveUploadedFileUsing(function (
+                                    TemporaryUploadedFile $file,
+                                    FileUpload $component,
+                                ): string {
+                                    $existingPaths = self::existingGaleriaPathsFromLivewire(
+                                        $component->getLivewire(),
+                                    );
 
-                                            Hidden::make('posicion')
-                                                ->dehydrated(true),
-                                        ])
-                                        ->grid(4)
-                                        ->orderColumn('posicion')
-                                        ->reorderableWithDragAndDrop()
-                                        ->collapsible()
-                                        ->addActionLabel('Agregar nueva foto')
-                                        ->itemLabel(function (array $state): ?string {
-                                            $foto = $state['foto'] ?? null;
+                                    if (! $file instanceof TemporaryUploadedFile) {
+                                        $path = self::normalizeFotoDiskPath($file);
 
-                                            if (is_array($foto)) {
-                                                $foto = Arr::first($foto);
-                                            }
+                                        if ($path !== null && in_array($path, $existingPaths, true)) {
+                                            return $path;
+                                        }
+                                    }
 
-                                            return filled($foto)
-                                                ? 'Foto #' . ($state['posicion'] ?? '—')
-                                                : 'Nueva foto';
-                                        }),
-
+                                    return app(ImageWatermarkService::class)->applyToUploadedFile(
+                                        $file,
+                                        disk: 'public',
+                                        directory: 'fotos',
+                                    );
+                                })
+                                ->imageEditor()
+                                ->required()
+                                ->minFiles(1)
+                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
+                                ->validationMessages([
+                                    'required' => 'Debes subir al menos una foto.',
+                                    'min' => 'Debes subir al menos una foto.',
+                                    'mimetypes' => 'El archivo debe ser un formato de imagen válido (JPEG, PNG, JPG).',
+                                    'mimes' => 'Solo se permiten archivos con extensión .jpg, .jpeg o .png.',
+                                ]),
                         ])
                         ->columnSpanFull(),
 

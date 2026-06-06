@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Inmuebles\Pages;
 
+use App\Filament\Resources\Inmuebles\Concerns\ManagesGaleriaFotos;
 use App\Filament\Resources\Inmuebles\InmuebleResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -9,6 +10,7 @@ use Filament\Notifications\Notification;
 
 class EditInmueble extends EditRecord
 {
+    use ManagesGaleriaFotos;
     protected static string $resource = InmuebleResource::class;
 
     protected function getHeaderActions(): array

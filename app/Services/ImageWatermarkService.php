@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\Encoders\PngEncoder;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Interfaces\ImageInterface;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -17,6 +18,12 @@ class ImageWatermarkService
 
     private const WATERMARK_WIDTH_RATIO = 0.20;
 
+    private const MAX_WIDTH = 1200;
+
+    private const MAX_HEIGHT = 800;
+
+    private const OUTPUT_QUALITY = 80;
+
     /** Opacidad de la marca de agua (0–100). */
     private const WATERMARK_OPACITY = 80;
 
@@ -25,18 +32,18 @@ class ImageWatermarkService
         $manager = new ImageManager(new Driver());
         $image = $manager->read($file->getRealPath());
 
+        $this->optimizeForStorage($image);
         $this->applyWatermark($manager, $image);
 
-        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $useWebp = $this->supportsWebp();
+        $extension = $useWebp ? 'webp' : 'jpg';
         $filename = Str::uuid()->toString() . '.' . $extension;
         $relativePath = trim($directory . '/' . $filename, '/');
 
-        $encoded = $extension === 'png'
-            ? $image->encode(new PngEncoder())
-            : $image->encode(new JpegEncoder(quality: 90));
+        $encoded = $this->encodeOptimized($image, $useWebp);
 
         $storage = Storage::disk($disk);
-        $storage->put($relativePath, (string) $encoded);
+        $storage->put($relativePath, $encoded);
         $storage->setVisibility($relativePath, 'public');
 
         return $relativePath;
@@ -68,6 +75,28 @@ class ImageWatermarkService
         $storage->put($relativePath, (string) $encoded);
 
         return true;
+    }
+
+    /**
+     * Reduce dimensiones solo si superan el máximo; nunca escala hacia arriba.
+     */
+    private function optimizeForStorage(ImageInterface $image): void
+    {
+        $image->scaleDown(width: self::MAX_WIDTH, height: self::MAX_HEIGHT);
+    }
+
+    private function encodeOptimized(ImageInterface $image, bool $useWebp): string
+    {
+        if ($useWebp) {
+            return (string) $image->encode(new WebpEncoder(quality: self::OUTPUT_QUALITY));
+        }
+
+        return (string) $image->encode(new JpegEncoder(quality: self::OUTPUT_QUALITY));
+    }
+
+    private function supportsWebp(): bool
+    {
+        return function_exists('imagewebp');
     }
 
     /**

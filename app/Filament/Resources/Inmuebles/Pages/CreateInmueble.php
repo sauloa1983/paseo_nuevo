@@ -2,12 +2,14 @@
 
 namespace App\Filament\Resources\Inmuebles\Pages;
 
+use App\Filament\Resources\Inmuebles\Concerns\ManagesGaleriaFotos;
 use App\Filament\Resources\Inmuebles\InmuebleResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
 
 class CreateInmueble extends CreateRecord
 {
+    use ManagesGaleriaFotos;
     protected static string $resource = InmuebleResource::class;
 
     public function getTitle(): string
