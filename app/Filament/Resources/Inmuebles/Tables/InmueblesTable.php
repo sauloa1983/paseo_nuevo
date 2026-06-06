@@ -6,18 +6,24 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
+use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Notifications\Notification;
+use Filament\Tables\Table;
 
 class InmueblesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->extraAttributes(['class' => 'pe-inmuebles-table'])
+            ->defaultPaginationPageOption(10)
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->scrollToTopOnPageChange()
+            ->recordActionsPosition(RecordActionsPosition::AfterColumns)
             ->columns([
                 TextColumn::make('codigo')
                     ->label('Código')

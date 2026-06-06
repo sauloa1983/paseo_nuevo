@@ -131,6 +131,8 @@
     </div>
 </section>
 
+@include('partials.property-instructivos')
+
 <section
     class="banner-rojo"
     style="--banner-rojo-bg: url('{{ asset('images/home-parallax.jpg') }}');"

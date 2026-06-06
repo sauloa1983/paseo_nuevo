@@ -11,7 +11,19 @@ trait HasEtiquetasComerciales
         'OPORTUNIDAD' => 'Oportunidad',
         'NEGOCIABLE' => 'Negociable',
         'BAJO_DE_PRECIO' => 'Bajo de Precio',
+        'ESTRENA' => 'Estrena',
     ];
+
+    public function badgeStatusCssClass(): ?string
+    {
+        return match ($this->badge_status) {
+            'OPORTUNIDAD' => 'pe-property-card__badge--oportunidad',
+            'NEGOCIABLE' => 'pe-property-card__badge--negociable',
+            'BAJO_DE_PRECIO' => 'pe-property-card__badge--bajo-precio',
+            'ESTRENA' => 'pe-property-card__badge--estrena',
+            default => null,
+        };
+    }
 
     protected function disponibilidadTexto(): Attribute
     {

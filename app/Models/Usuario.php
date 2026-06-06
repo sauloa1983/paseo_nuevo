@@ -17,8 +17,8 @@ class Usuario extends Authenticatable implements FilamentUser, HasName
     use HasFactory, Notifiable;
 
     protected $table = 'usuarios';
-    protected $primaryKey = 'cedula';  // ← ESTA LÍNEA
-    public $incrementing = false;      // ← + esta
+    protected $primaryKey = 'id';  // ← ESTA LÍNEA
+    public $incrementing = true;      // ← + esta
     protected $keyType = 'string';     // ← + esta
 
     protected $fillable = ['cedula', 'nombres', 'apellidos', 'direccion', 'telefonos', 'email', 'foto', 'usuario', 'cargo', 'vigente', 'password'];
@@ -47,7 +47,23 @@ class Usuario extends Authenticatable implements FilamentUser, HasName
 
     public function inmuebles()
     {
-        return $this->hasMany(Property::class, 'asesor', 'cedula');
+        return $this->hasMany(Inmueble::class, 'asesor', 'id');
+    }
+
+    public function cantidadInmueblesAsignados(): int
+    {
+        return $this->inmuebles()->count();
+    }
+
+    public function motivoNoEliminable(): ?string
+    {
+        $cantidad = $this->cantidadInmueblesAsignados();
+
+        if ($cantidad === 0) {
+            return null;
+        }
+
+        return "Este usuario tiene {$cantidad} inmueble(s) asignados como asesor. Reasigne los inmuebles antes de eliminarlo.";
     }
 
     public function cargos()

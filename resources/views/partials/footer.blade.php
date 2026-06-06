@@ -1,62 +1,41 @@
 @php
-    $footerOffices = [
-        [
-            'city' => 'Bucaramanga',
-            'address' => 'Cra 26 No. 34-53',
-            'phones' => ['607 697 8295'],
-            'license' => 'M. de A. 0126/96',
-        ],
-        [
-            'city' => 'Floridablanca',
-            'address' => 'Calle 29 # 29-33',
-            'phones' => ['607 619 6196', '313 805 0296'],
-            'license' => 'R.I. 0006-2012',
-        ],
-        [
-            'city' => 'Piedecuesta',
-            'address' => 'Calle 9 # 10-96',
-            'phones' => ['607 665 6009', '321 343 9492'],
-            'license' => 'M. de A. 120-C-G-2013',
-        ],
-        [
-            'city' => 'Girón',
-            'address' => 'Calle 39 # 22-07',
-            'phones' => ['607 607 1047', '311 897 6591'],
-            'license' => 'Res.041 de 2021',
-        ],
-        [
-            'city' => 'Bogotá',
-            'sedes' => [
-                ['label' => 'Prado', 'phones' => ['601 274 1106'], 'license' => 'M. de A. 20190052'],
-                ['label' => 'Chapinero', 'phones' => ['601 533 0775'], 'license' => 'M. de A. 20190052'],
-            ]
-        ],
-    ];
+    use App\Models\Ciudad;
+
+    $footerOffices = Ciudad::footerOffices();
 
     $footerLinks = [
         ['label' => 'Inicio', 'route' => 'home'],
         ['label' => 'Inmuebles', 'route' => 'inmuebles.search'],
         ['label' => 'Nosotros', 'route' => 'about'],
         ['label' => 'Servicios', 'route' => 'services'],
-        ['label' => 'Clientes', 'route' => 'clients'],
         ['label' => 'Requisitos', 'route' => 'tenant'],
+        ['label' => 'Clientes', 'route' => 'clients'],
         ['label' => 'Centro de Ayuda', 'route' => 'contact'],
     ];
+
+    $footerPhone = '(607) 697 8295';
+    $footerPhoneHref = 'tel:+576076978295';
+    $footerEmail = 'comercial@paseoespana.com';
+    $footerAddress = 'Cra 26 No. 34-53, Bucaramanga';
 @endphp
 
-<!--
-<div class="margin-top-55"></div>
--->
 <div id="footer">
 	<div class="container">
 		<div class="row">
-			<div class="col-md-4 col-sm-6 pe-footer-col">
+			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
 				<img class="footer-logo" src="{{ asset('images/logo.png') }}" alt="Paseo España Inmobiliaria">
-				<br><br>
-				<p>Buscas estabilidad laboral y cumplimiento en lo pactado de tu contrato. Envía tu hoja de vida al siguiente correo electrónico y te estaremos contactando <b>gerencia@paseoespana.com</b></p>
+				<div class="text-widget pe-footer-brand-text">
+					<span class="address">Más de 30 años conectando personas con propiedades en Bucaramanga y el área metropolitana.</span>
+				</div>
+				<ul class="social-icons pe-social-footer">
+					<li><a class="facebook" href="https://m.facebook.com/people/Paseo-Espa%C3%B1a-Inmobiliaria/100063452446558/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="icon-facebook"></i></a></li>
+					<li><a class="instagram" href="https://www.instagram.com/paseoespana/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="icon-instagram"></i></a></li>
+					<li><a class="youtube" href="https://www.youtube.com/@paseoespana" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="icon-youtube"></i></a></li>
+					<li><a class="linkedin" href="https://www.linkedin.com/company/paseo-espana-inmobiliaria" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="icon-linkedin"></i></a></li>
+				</ul>
 			</div>
 
-			<div class="col-md-3 col-sm-6 pe-footer-col">
+			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
 				<h4>Links de interés</h4>
 				<ul class="footer-links pe-footer-links-grid">
 					@foreach ($footerLinks as $link)
@@ -65,11 +44,10 @@
 						</li>
 					@endforeach
 				</ul>
-				<div class="clearfix"></div>
 			</div>
 
-			<div class="col-md-5 col-sm-12 pe-footer-col">
-				<h4>Nuestras Oficinas</h4>
+			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
+				<h4>Nuestras oficinas</h4>
 				<ul class="pe-offices" role="list">
 					@foreach ($footerOffices as $office)
 						<li
@@ -111,46 +89,104 @@
 									@foreach ($office['sedes'] as $sede)
 										<div class="pe-office-tooltip__block">
 											<p class="pe-office-tooltip__sede">{{ $sede['label'] }}</p>
-											<p class="pe-office-tooltip__phones">
-												<i class="fa fa-phone" aria-hidden="true"></i>
-												<span>{{ implode(' · ', $sede['phones']) }}</span>
-											</p>
-                                            <p class="pe-office-tooltip__text">
-                                                <i class="fa fa-file-text" aria-hidden="true"></i>
-                                                <span>{{ $sede['license'] }}</span>
-                                            </p>
+											@if (! empty($sede['address']))
+												<p class="pe-office-tooltip__address">
+													<i class="fa fa-map-marker" aria-hidden="true"></i>
+													<span>{{ $sede['address'] }}</span>
+												</p>
+											@endif
+											@if (! empty($sede['phones']))
+												<p class="pe-office-tooltip__phones">
+													<i class="fa fa-phone" aria-hidden="true"></i>
+													<span>{{ implode(' · ', $sede['phones']) }}</span>
+												</p>
+											@endif
+											@if (! empty($sede['email']))
+												<p class="pe-office-tooltip__text">
+													<i class="fa fa-envelope-o" aria-hidden="true"></i>
+													<span>{{ $sede['email'] }}</span>
+												</p>
+											@endif
+											@if (! empty($sede['license']))
+												<p class="pe-office-tooltip__text">
+													<i class="fa fa-file-text" aria-hidden="true"></i>
+													<span>{{ $sede['license'] }}</span>
+												</p>
+											@endif
+											@foreach ($sede['dependencias'] ?? [] as $dependencia)
+												<p class="pe-office-tooltip__text">
+													<i class="fa fa-user" aria-hidden="true"></i>
+													<span>
+														{{ $dependencia['nombre'] }}
+														@if (filled($dependencia['contacto'] ?? null))
+															— {{ $dependencia['contacto'] }}
+														@endif
+														@if (filled($dependencia['telefono'] ?? null))
+															· {{ $dependencia['telefono'] }}
+														@endif
+														@if (filled($dependencia['email'] ?? null))
+															· {{ $dependencia['email'] }}
+														@endif
+													</span>
+												</p>
+											@endforeach
 										</div>
 									@endforeach
 								@else
-									<p class="pe-office-tooltip__address">
-										<i class="fa fa-map-marker" aria-hidden="true"></i>
-										<span>{{ $office['address'] }}</span>
-									</p>
-									<p class="pe-office-tooltip__phones">
-										<i class="fa fa-phone" aria-hidden="true"></i>
-										<span>{{ implode(' · ', $office['phones']) }}</span>
-									</p>
-                                    <p class="pe-office-tooltip__text">
-                                        <i class="fa fa-file-text" aria-hidden="true"></i>
-                                        <span>{{ $office['license'] }}</span>
-                                    </p>
+									@if (! empty($office['address']))
+										<p class="pe-office-tooltip__address">
+											<i class="fa fa-map-marker" aria-hidden="true"></i>
+											<span>{{ $office['address'] }}</span>
+										</p>
+									@endif
+									@if (! empty($office['phones']))
+										<p class="pe-office-tooltip__phones">
+											<i class="fa fa-phone" aria-hidden="true"></i>
+											<span>{{ implode(' · ', $office['phones']) }}</span>
+										</p>
+									@endif
+									@if (! empty($office['license']))
+										<p class="pe-office-tooltip__text">
+											<i class="fa fa-file-text" aria-hidden="true"></i>
+											<span>{{ $office['license'] }}</span>
+										</p>
+									@endif
 								@endif
 							</div>
 						</li>
 					@endforeach
 				</ul>
+			</div>
 
-				<ul class="social-icons pe-social-right margin-top-20">
-					<li><a class="facebook" href="https://m.facebook.com/people/Paseo-Espa%C3%B1a-Inmobiliaria/100063452446558/" target="_blank" rel="noopener noreferrer"><i class="icon-facebook"></i></a></li>
-					<li><a class="instagram" href="https://www.instagram.com/paseoespana/" target="_blank" rel="noopener noreferrer"><i class="icon-instagram"></i></a></li>
-					<li><a class="youtube" href="https://www.youtube.com/@paseoespana" target="_blank" rel="noopener noreferrer"><i class="icon-youtube"></i></a></li>
+			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
+				<h4>Contáctanos</h4>
+				<ul class="pe-footer-contact">
+					<li>
+						<i class="fa fa-phone" aria-hidden="true"></i>
+						<a href="{{ $footerPhoneHref }}">{{ $footerPhone }}</a>
+					</li>
+					<li>
+						<i class="fa fa-envelope-o" aria-hidden="true"></i>
+						<a href="mailto:{{ $footerEmail }}">{{ $footerEmail }}</a>
+					</li>
+					<li>
+						<i class="fa fa-map-marker" aria-hidden="true"></i>
+						<span>{{ $footerAddress }}</span>
+					</li>
 				</ul>
 			</div>
 		</div>
 
 		<div class="row">
 			<div class="col-md-12">
-				<div class="copyrights">© {{ date('Y') }} Paseo España Inmobiliaria. Todos los derechos reservados.</div>
+				<div class="pe-footer-copyright-bar">
+					<div class="copyrights pe-footer-copyright-text">© {{ date('Y') }} Paseo España Inmobiliaria. Todos los derechos reservados.</div>
+					<nav class="pe-footer-legal" aria-label="Enlaces legales">
+						<a href="{{ route('about') }}#policy-data">Política de privacidad</a>
+						<span aria-hidden="true">|</span>
+						<a href="{{ route('about') }}#policy-terms">Términos y condiciones</a>
+					</nav>
+				</div>
 			</div>
 		</div>
 	</div>

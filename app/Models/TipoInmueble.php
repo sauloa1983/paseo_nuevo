@@ -1,10 +1,12 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\PreventsDeletionWhenLinkedToInmuebles;
 use Illuminate\Database\Eloquent\Model;
 
 class TipoInmueble extends Model
 {
+    use PreventsDeletionWhenLinkedToInmuebles;
 
     public $timestamps = false;
 

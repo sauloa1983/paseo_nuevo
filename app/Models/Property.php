@@ -73,7 +73,7 @@ class Property extends Model
     // Relación con Asesor
     public function asesorData()
     {
-        return $this->belongsTo(Usuario::class, 'asesor', 'cedula');
+        return $this->belongsTo(Usuario::class, 'asesor', 'id');
     }
 
     /*protected $primaryKey = 'id';*/

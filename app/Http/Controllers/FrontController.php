@@ -26,15 +26,16 @@ class FrontController extends Controller
         $destacados_ventas   = $this->destacadosPorSede('venta');
 
         $ciudadesPopulares = Inmueble::select('ciudad', DB::raw('count(*) as total'))
-            ->where('estado', 0) // Solo activos
+            ->where('estado', 0)
+            ->whereHas('ciudadRelacion', fn ($query) => $query->visibleInBuscador())
             ->groupBy('ciudad')
             ->orderByDesc('total')
             ->limit(4)
-            ->with('ciudadRelacion')  // Carga nombre ciudad
+            ->with(['ciudadRelacion' => fn ($query) => $query->visibleInBuscador()])
             ->get();
 
-
-        $ciudades = DB::table('ciudades')
+        $ciudades = Ciudad::query()
+            ->visibleInBuscador()
             ->orderBy('nombre')
             ->pluck('nombre', 'id');
 
@@ -148,6 +149,7 @@ class FrontController extends Controller
         $ciudadesConOficina = Ciudad::query()
             ->where('has_office', true)
             ->with('contacts')
+            ->orderByDesc('visible_buscador')
             ->orderBy('nombre')
             ->get();
 

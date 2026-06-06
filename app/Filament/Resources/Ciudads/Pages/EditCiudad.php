@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Ciudads\Pages;
 
 use App\Filament\Resources\Ciudads\CiudadResource;
+use App\Filament\Support\InmuebleLinkedDeleteGuard;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
@@ -14,9 +15,12 @@ class EditCiudad extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()
-                ->label('Eliminar Ciudad')
-                ->icon('heroicon-m-trash'),
+            InmuebleLinkedDeleteGuard::wrapDeleteAction(
+                DeleteAction::make()
+                    ->label('Eliminar Ciudad')
+                    ->icon('heroicon-m-trash'),
+                'No se puede eliminar la ciudad',
+            ),
         ];
     }
 

@@ -568,8 +568,19 @@ $(document).ready(function(){
     /*----------------------------------------------------*/
     $('.more-search-options-trigger').on('click', function(e){
     	e.preventDefault();
-		$('.more-search-options, .more-search-options-trigger').toggleClass('active');
-		$('.more-search-options.relative').animate({height: 'toggle', opacity: 'toggle'}, 300);
+		var $trigger = $(this);
+		var $panel = $trigger.next('.more-search-options');
+
+		if (!$panel.length) {
+			return;
+		}
+
+		$trigger.toggleClass('active');
+		$panel.toggleClass('active');
+
+		if ($panel.hasClass('relative')) {
+			$panel.stop(true, true).animate({height: 'toggle', opacity: 'toggle'}, 300);
+		}
 	});
 
 

@@ -30,9 +30,13 @@ Route::get('/faq', [FrontController::class, 'faq'])->name('faq');
 Route::get('/inmuebles/ciudad/{ciudad}', [FrontController::class, 'porCiudad'])->name('inmuebles.ciudad');
 
 
-Route::get('/barrios/{ciudad}', function($ciudadId) {
+Route::get('/barrios/{ciudad}', function ($ciudadId) {
+    if (! \App\Models\Ciudad::esVisibleEnBuscador($ciudadId)) {
+        return response()->json([]);
+    }
+
     $barrios = DB::table('barrios')
-        ->where('ciudad_fk', $ciudadId)  // Ajusta FK
+        ->where('ciudad_fk', $ciudadId)
         ->orderBy('nombre')
         ->get(['codigo_barrio', 'nombre']);
 
@@ -52,7 +56,7 @@ Route::get('/limpiar-sistema', function () {
     return '¡Proyecto resubido y actualizado con éxito!';
 });
 /* Crea enlace simbólico para almacenamiento público (si es necesario) */
-/*Route::get('/crear-storage-link', function () {
+Route::get('/crear-storage-link', function () {
     $target = base_path('storage/app/public');
     $link = public_path('storage');
 
@@ -67,4 +71,4 @@ Route::get('/limpiar-sistema', function () {
     symlink($target, $link);
 
     return 'Enlace simbólico creado correctamente';
-});*/
+});

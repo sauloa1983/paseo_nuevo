@@ -5,8 +5,10 @@ namespace App\Filament\Resources\Inmuebles\Schemas;
 use App\Models\Inmueble;
 use App\Models\Usuario;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -16,6 +18,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Forms\Components\Hidden;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Schemas\Schema;
@@ -236,15 +239,25 @@ class InmuebleForm
                                             ->numeric(),
                                         Select::make('asesor')
                                             ->label('Asesor')
-                                            ->options(
-                                                Usuario::where('cargo', '!=', 1)
-                                                    ->orderBy('nombres')      // ← Ordena por nombres
-                                                    ->orderBy('apellidos')    // ← Luego apellidos
+                                            ->options(function ($livewire) {
+                                                $asesorActual = $livewire->record?->asesor ?? null;
+
+                                                return Usuario::query()
+                                                    ->where('cargo', '!=', 1)
+                                                    ->where(function ($query) use ($asesorActual) {
+                                                        $query->where('vigente', 1);
+
+                                                        if (filled($asesorActual)) {
+                                                            $query->orWhere('id', $asesorActual);
+                                                        }
+                                                    })
+                                                    ->orderBy('nombres')
+                                                    ->orderBy('apellidos')
                                                     ->get()
                                                     ->mapWithKeys(fn ($user) => [
-                                                        $user->cedula => $user->nombres . ' ' . $user->apellidos
-                                                    ])
-                                            )
+                                                        $user->id => $user->nombres . ' ' . $user->apellidos,
+                                                    ]);
+                                            })
                                             ->searchable()
                                             ->preload()
                                             ->required()
@@ -277,7 +290,7 @@ class InmuebleForm
                         ])
                         ->columnSpanFull(),
 
-                    Tab::make('Características')
+                    Tab::make('Detalles del inmueble')
                         ->schema([
                             Grid::make(1)
                                 ->schema([
@@ -344,7 +357,19 @@ class InmuebleForm
                                             Toggle::make('calentador')->label('Calentador'),
 
                                             Toggle::make('aire_acondicionado')->label('Aire Acondicionado'),
-                                        ])
+                                        ]),
+
+                                    Placeholder::make('detalles_separator')
+                                        ->hiddenLabel()
+                                        ->content(new HtmlString('<div class="pe-inmueble-detalles-divider" role="presentation"></div>'))
+                                        ->columnSpanFull()
+                                        ->dehydrated(false),
+
+                                    Textarea::make('observaciones')
+                                        ->label('Observaciones')
+                                        ->rows(4)
+                                        ->columnSpanFull()
+                                        ->placeholder('Notas internas o detalles adicionales del inmueble…'),
                                 ])
                         ])
                         ->columnSpanFull(),

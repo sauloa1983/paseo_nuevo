@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PreventsDeletionWhenLinkedToInmuebles;
 use Illuminate\Database\Eloquent\Model;
 
 class Barrio extends Model
 {
+    use PreventsDeletionWhenLinkedToInmuebles;
 
     public $incrementing = true; // Si el código es autoincremental
 

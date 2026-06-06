@@ -16,6 +16,24 @@ use Filament\Notifications\Notification;
 
 class UsuariosTable
 {
+    public static function makeDeleteAction(): DeleteAction
+    {
+        return DeleteAction::make()
+            ->using(function (Usuario $record): bool {
+                if ($motivo = $record->motivoNoEliminable()) {
+                    Notification::make()
+                        ->danger()
+                        ->title('No se puede eliminar el usuario')
+                        ->body($motivo)
+                        ->send();
+
+                    return false;
+                }
+
+                return (bool) $record->delete();
+            });
+    }
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -61,7 +79,7 @@ class UsuariosTable
                     ->extraAttributes([
                         'class' => 'group hover:animate-bounce',
                     ]),
-                DeleteAction::make()
+                self::makeDeleteAction()
                     ->color('danger')
                     ->icon('heroicon-m-trash')
                     ->modalIconColor('danger')
@@ -85,7 +103,28 @@ class UsuariosTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->using(function (\Illuminate\Support\Collection $records): void {
+                            $bloqueados = $records->filter(
+                                fn (Usuario $usuario): bool => $usuario->cantidadInmueblesAsignados() > 0,
+                            );
+
+                            if ($bloqueados->isNotEmpty()) {
+                                $nombres = $bloqueados
+                                    ->map(fn (Usuario $usuario): string => trim("{$usuario->nombres} {$usuario->apellidos}"))
+                                    ->implode(', ');
+
+                                Notification::make()
+                                    ->danger()
+                                    ->title('No se pueden eliminar algunos usuarios')
+                                    ->body("Los siguientes usuarios tienen inmuebles asignados como asesor: {$nombres}.")
+                                    ->send();
+
+                                return;
+                            }
+
+                            $records->each->delete();
+                        }),
                 ]),
             ]);
     }

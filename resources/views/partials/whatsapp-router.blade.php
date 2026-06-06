@@ -91,11 +91,10 @@
         <header class="pe-wa-widget__header">
             <div class="pe-wa-widget__brand">
                 <span class="pe-wa-widget__avatar">
-                    <img src="{{ asset('images/logo.png') }}" alt="Paseo España">
+                    <img src="{{ asset('images/logo_v.png') }}" alt="Paseo España">
                 </span>
                 <span class="pe-wa-widget__brand-text">
                     <strong id="pe-wa-widget-title">Paseo España - Contacto Directo</strong>
-                    <small>Soporte y Ventas 24/7</small>
                 </span>
             </div>
             <button type="button" class="pe-wa-widget__close" @click="close()" aria-label="Cerrar">&times;</button>

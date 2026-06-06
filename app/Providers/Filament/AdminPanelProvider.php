@@ -25,6 +25,7 @@ use Filament\Actions\Action;
 use Filament\Navigation\MenuItem;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 use Filament\Enums\ThemeMode;
+use Filament\View\PanelsRenderHook;
 
 
 class AdminPanelProvider extends PanelProvider
@@ -43,8 +44,20 @@ class AdminPanelProvider extends PanelProvider
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->authGuard('web')       // ✅ Usa guard web (tabla usuarios)
             ->authPasswordBroker('users')  // ✅ Usa provider users
-            ->brandName('Panel Administrativo')
+            ->brandName('Paseo España Inmobiliaria')
+            ->brandLogo(asset('images/logo.png'))
+            ->brandLogoHeight('4rem')
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('5.75rem')
             ->maxContentWidth(Width::Full) // Muestra el contenido al 100% del ancho
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_LOGO_BEFORE,
+                fn (): string => view('filament.partials.admin-topbar-brand')->render()
+            )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_LOGO_BEFORE,
+                fn (): string => view('filament.partials.admin-topbar-brand')->render()
+            )
 
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

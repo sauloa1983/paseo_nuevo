@@ -6,9 +6,19 @@
                 <ul class="top-bar-menu">
                     <li class="pe-top-bar__hours">
                         <i class="fa fa-clock-o" aria-hidden="true"></i>
+                        @php
+                            $officeHoursNewSchedule = now()->startOfDay()->gte(
+                                \Illuminate\Support\Carbon::parse('2026-07-16')->startOfDay()
+                            );
+                        @endphp
                         <span class="pe-top-bar__hours-text">
-                            <span class="pe-top-bar__hours-line">Lun-Vie: 7:30 AM - 12:30 PM / 1:30 PM - 5:30 PM</span>
-                            <span class="pe-top-bar__hours-line pe-top-bar__hours-line--sat">Sáb: 8:00 AM - 12:00 PM</span>
+                            @if ($officeHoursNewSchedule)
+                                <span class="pe-top-bar__hours-line">Lun-Jue: 7:30 AM - 12:00 PM / 1:00 PM - 5:00 PM</span>
+                                <span class="pe-top-bar__hours-line pe-top-bar__hours-line--sep">Vie: 7:30 AM - 12:00 PM / 1:00 PM - 4:30 PM</span>
+                            @else
+                                <span class="pe-top-bar__hours-line">Lun-Vie: 8:00 AM - 12:00 PM / 1:00 PM - 5:00 PM</span>
+                                <span class="pe-top-bar__hours-line pe-top-bar__hours-line--sat">Sáb: 8:00 AM - 12:00 PM</span>
+                            @endif
                         </span>
                     </li>
                 </ul>

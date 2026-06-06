@@ -5,18 +5,24 @@ namespace App\Filament\Resources\Usuarios\Schemas;
 use App\Models\Cargo;
 use App\Models\Usuario;
 use Filament\Forms\Components\FileUpload;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class UsuariosForm
 {
+    public const DEFAULT_PASSWORD = 'paseoespana';
+
     private static function normalizeFotoDiskPath(mixed $state): ?string
     {
         if (is_array($state)) {
@@ -48,6 +54,79 @@ class UsuariosForm
             'avif' => 'image/avif',
             default => 'image/jpeg',
         };
+    }
+
+    private static function suggestUsuario(?string $nombres, ?string $apellidos): string
+    {
+        $primerNombre = Str::of($nombres ?? '')
+            ->trim()
+            ->explode(' ')
+            ->filter()
+            ->first();
+
+        $apellidosNormalizados = Str::of($apellidos ?? '')
+            ->trim()
+            ->ascii()
+            ->upper()
+            ->replaceMatches('/\s+/', '');
+
+        if (blank($primerNombre) || $apellidosNormalizados->isEmpty()) {
+            return '';
+        }
+
+        $inicial = Str::substr(
+            Str::upper(Str::ascii((string) $primerNombre)),
+            0,
+            1,
+        );
+
+        return $inicial . $apellidosNormalizados;
+    }
+
+    private static function usuarioExists(string $usuario, ?int $ignoreId = null): bool
+    {
+        $query = Usuario::query()->where('usuario', $usuario);
+
+        if (filled($ignoreId)) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        return $query->exists();
+    }
+
+    public static function suggestUniqueUsuario(?string $nombres, ?string $apellidos, ?int $ignoreId = null): string
+    {
+        $base = self::suggestUsuario($nombres, $apellidos);
+
+        if (blank($base)) {
+            return '';
+        }
+
+        $usuario = $base;
+        $suffix = 1;
+
+        while (self::usuarioExists($usuario, $ignoreId)) {
+            $suffix++;
+            $usuario = $base . $suffix;
+        }
+
+        return $usuario;
+    }
+
+    private static function syncUsuarioFromNombre(Get $get, Set $set, mixed $livewire): void
+    {
+        if ($get('usuario_manually_edited')) {
+            return;
+        }
+
+        $set(
+            'usuario',
+            self::suggestUniqueUsuario(
+                $get('nombres'),
+                $get('apellidos'),
+                $livewire->record?->id ?? null,
+            ),
+        );
     }
 
     public static function configure(Schema $schema): Schema
@@ -167,14 +246,20 @@ class UsuariosForm
                                                     'numeric' => 'La cédula debe ser un número.',
                                                     'unique' => 'Esa cédula ya existe.',
                                                     'digits_between' => 'La cédula debe tener entre 6 y 12 dígitos.',
-                                                ])
-                                                ->disabledOn('edit')
-                                                ->dehydrated(),
+                                                ]),
+
+                                            Hidden::make('usuario_manually_edited')
+                                                ->default(fn ($livewire): bool => ! ($livewire instanceof CreateRecord))
+                                                ->dehydrated(false),
 
                                             TextInput::make('nombres')
                                                 ->label('Nombres')
                                                 ->required()
                                                 ->maxLength(255)
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(function (Get $get, Set $set, $livewire): void {
+                                                    self::syncUsuarioFromNombre($get, $set, $livewire);
+                                                })
                                                 ->validationMessages([
                                                     'required' => 'Los nombres son obligatorios.',
                                                 ]),
@@ -183,6 +268,10 @@ class UsuariosForm
                                                 ->label('Apellidos')
                                                 ->required()
                                                 ->maxLength(255)
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(function (Get $get, Set $set, $livewire): void {
+                                                    self::syncUsuarioFromNombre($get, $set, $livewire);
+                                                })
                                                 ->validationMessages([
                                                     'required' => 'Los apellidos son obligatorios.',
                                                 ]),
@@ -208,7 +297,7 @@ class UsuariosForm
                                                 ->validationMessages([
                                                     'required' => 'El correo es obligatorio.',
                                                     'email' => 'Debe ser un correo válido.',
-                                                    'unique' => 'Ese usuario ya existe.',
+                                                    'unique' => 'Ese correo ya está registrado.',
                                                 ]),
 
                                             Select::make('cargo')
@@ -236,29 +325,85 @@ class UsuariosForm
                                                 ])
                                                 ->columnSpanFull(),
 
-                                            TextInput::make('usuario')
-                                                ->label('Usuario')
-                                                ->required()
-                                                ->maxLength(255)
-                                                ->unique(
-                                                    table: Usuario::class,
-                                                    column: 'usuario',
-                                                    ignoreRecord: true,
-                                                )
-                                                ->validationMessages([
-                                                    'required' => 'El usuario es obligatorio.',
-                                                    'unique' => 'Ese usuario ya existe.',
+                                            Grid::make([
+                                                'default' => 1,
+                                                'md' => 2,
+                                            ])
+                                                ->columnSpanFull()
+                                                ->schema([
+                                                    TextInput::make('usuario')
+                                                        ->label('Usuario')
+                                                        ->required()
+                                                        ->maxLength(255)
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(function (?string $state, Get $get, Set $set, $livewire): void {
+                                                            $suggested = self::suggestUniqueUsuario(
+                                                                $get('nombres'),
+                                                                $get('apellidos'),
+                                                                $livewire->record?->id ?? null,
+                                                            );
+
+                                                            $set(
+                                                                'usuario_manually_edited',
+                                                                filled($state) && $state !== $suggested,
+                                                            );
+                                                        })
+                                                        ->unique(
+                                                            table: Usuario::class,
+                                                            column: 'usuario',
+                                                            ignoreRecord: true,
+                                                        )
+                                                        ->helperText('Se genera automáticamente con la inicial del nombre y los apellidos. Si lo edita, debe ser único.')
+                                                        ->validationMessages([
+                                                            'required' => 'El usuario es obligatorio.',
+                                                            'unique' => 'Ese nombre de usuario ya existe.',
+                                                        ]),
+
+                                                    Select::make('vigente')
+                                                        ->label('Estado')
+                                                        ->options([
+                                                            1 => 'Activo',
+                                                            0 => 'Inactivo',
+                                                        ])
+                                                        ->required()
+                                                        ->validationMessages([
+                                                            'required' => 'El estado es obligatorio.',
+                                                        ]),
                                                 ]),
 
-                                            Select::make('vigente')
-                                                ->label('Estado')
-                                                ->options([
-                                                    1 => 'Activo',
-                                                    0 => 'Inactivo',
-                                                ])
-                                                ->required()
-                                                ->validationMessages([
-                                                    'required' => 'El estado es obligatorio.',
+                                            Grid::make([
+                                                'default' => 1,
+                                                'md' => 2,
+                                            ])
+                                                ->columnSpanFull()
+                                                ->schema([
+                                                    TextInput::make('password')
+                                                        ->label('Contraseña')
+                                                        ->password()
+                                                        ->revealable()
+                                                        ->default(fn ($livewire): ?string => $livewire instanceof CreateRecord
+                                                            ? self::DEFAULT_PASSWORD
+                                                            : null)
+                                                        ->dehydrated(fn (?string $state, $livewire): bool => $livewire instanceof CreateRecord
+                                                            || filled($state))
+                                                        ->same('passwordConfirmation')
+                                                        ->maxLength(255)
+                                                        ->helperText(fn ($livewire): string => $livewire instanceof CreateRecord
+                                                            ? 'Por defecto: ' . self::DEFAULT_PASSWORD . '. Puede cambiarla si lo desea.'
+                                                            : 'Dejar vacío para mantener la contraseña actual.')
+                                                        ->validationMessages([
+                                                            'same' => 'Las contraseñas no coinciden.',
+                                                        ]),
+
+                                                    TextInput::make('passwordConfirmation')
+                                                        ->label('Confirmar contraseña')
+                                                        ->password()
+                                                        ->revealable()
+                                                        ->default(fn ($livewire): ?string => $livewire instanceof CreateRecord
+                                                            ? self::DEFAULT_PASSWORD
+                                                            : null)
+                                                        ->dehydrated(false)
+                                                        ->maxLength(255),
                                                 ]),
                                         ]),
                                 ]),

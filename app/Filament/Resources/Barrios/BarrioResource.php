@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Barrios;
 
 use App\Filament\Resources\Barrios\Pages\ManageBarrios;
+use App\Filament\Support\InmuebleLinkedDeleteGuard;
 use App\Models\Barrio;
 use App\Models\Ciudad;
 use BackedEnum;
@@ -109,31 +110,37 @@ class BarrioResource extends Resource
                             ->title('Barrio actualizado correctamente')
                             ->body('Los cambios se guardaron con éxito.'),
                     ),
-                DeleteAction::make()
-                    ->color('danger')
-                    ->icon('heroicon-m-trash')
-                    ->modalIconColor('danger')
-                    ->modalHeading('¿Eliminar barrio?')
-                    ->modalDescription('¿Está seguro de que desea eliminar este barrio? Esta acción no se puede deshacer.')
-                    ->iconButton()
-                    ->size('xl')
-                    ->modalSubmitAction(fn ($action) => $action->color('danger'))
-                    ->modalCancelAction(fn ($action) => $action->color('gray'))
-                    ->color('gray')
-                    ->tooltip('Eliminar barrio')
-                    ->extraAttributes([
-                        'class' => 'group hover:animate-bounce',
-                    ])
-                    ->successNotification(
-                        Notification::make()
-                            ->danger()
-                            ->title('Barrio eliminado')
-                            ->body('El barrio se eliminó correctamente.'),
-                    ),
+                InmuebleLinkedDeleteGuard::wrapDeleteAction(
+                    DeleteAction::make()
+                        ->color('danger')
+                        ->icon('heroicon-m-trash')
+                        ->modalIconColor('danger')
+                        ->modalHeading('¿Eliminar barrio?')
+                        ->modalDescription('¿Está seguro de que desea eliminar este barrio? Esta acción no se puede deshacer.')
+                        ->iconButton()
+                        ->size('xl')
+                        ->modalSubmitAction(fn ($action) => $action->color('danger'))
+                        ->modalCancelAction(fn ($action) => $action->color('gray'))
+                        ->color('gray')
+                        ->tooltip('Eliminar barrio')
+                        ->extraAttributes([
+                            'class' => 'group hover:animate-bounce',
+                        ])
+                        ->successNotification(
+                            Notification::make()
+                                ->danger()
+                                ->title('Barrio eliminado')
+                                ->body('El barrio se eliminó correctamente.'),
+                        ),
+                    'No se puede eliminar el barrio',
+                ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    InmuebleLinkedDeleteGuard::wrapDeleteBulkAction(
+                        DeleteBulkAction::make(),
+                        'No se pueden eliminar algunos barrios',
+                    ),
                 ]),
             ]);
     }

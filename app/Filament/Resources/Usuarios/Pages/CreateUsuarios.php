@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Usuarios\Pages;
 
+use App\Filament\Resources\Usuarios\Schemas\UsuariosForm;
 use App\Filament\Resources\Usuarios\UsuariosResource;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
@@ -26,6 +27,22 @@ class CreateUsuarios extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if (blank($data['password'] ?? null)) {
+            $data['password'] = UsuariosForm::DEFAULT_PASSWORD;
+        }
+
+        if (blank($data['usuario'] ?? null)) {
+            $data['usuario'] = UsuariosForm::suggestUniqueUsuario(
+                $data['nombres'] ?? null,
+                $data['apellidos'] ?? null,
+            );
+        }
+
+        return $data;
     }
 
     protected function getFormActions(): array

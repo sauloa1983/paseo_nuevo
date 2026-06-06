@@ -105,11 +105,31 @@
                         </div>
                     </div>
 
+                    @php
+                        $parqMoto = (string) ($property->parq_moto ?? '') === '1';
+                        $parqComunal = (string) ($property->parq_comunal ?? '') === '1';
+
+                        if ($parqMoto) {
+                            $parqIcono = 'fa fa-motorcycle';
+                            $parqValor = '1';
+                            $parqEtiqueta = 'Parqueadero';
+                        } elseif ($parqComunal) {
+                            $parqIcono = 'fa fa-car';
+                            $parqValor = 'Parqueadero';
+                            $parqEtiqueta = 'comunal';
+                        } else {
+                            $parqIcono = 'fa fa-car';
+                            $parqValor = (string) (int) ($property->garajes ?? 0);
+                            $parqEtiqueta = 'Parqueadero';
+                        }
+                    @endphp
                     <div class="pe-quick-stats__item">
-                        <div class="pe-quick-stats__icon" aria-hidden="true"><i class="fa fa-car"></i></div>
+                        <div class="pe-quick-stats__icon" aria-hidden="true"><i class="{{ $parqIcono }}"></i></div>
                         <div class="pe-quick-stats__text">
-                            <div class="pe-quick-stats__value">{{ (int) ($property->garajes ?? 0)}}</div>
-                            <div class="pe-quick-stats__label">Parqueadero</div>
+                            <div class="pe-quick-stats__value">{{ $parqValor }}</div>
+                            @if($parqEtiqueta)
+                                <div class="pe-quick-stats__label">{{ $parqEtiqueta }}</div>
+                            @endif
                         </div>
                     </div>
 				</div>
@@ -179,7 +199,7 @@
                     }
 
                     if ($property->unidad && $property->unidad != "0" && $property->unidad != null) {
-                        $detalles[] = ['Unidad', $property->unidad];
+                        $detalles[] = ['No. Piso', $property->unidad];
                     }
                 @endphp
 
@@ -316,6 +336,12 @@
 
 				</ul>
 
+				@if(!empty($property->observaciones))
+				<h3 class="desc-headline">Información Adicional</h3>
+				<div class="pe-mv-card__body">
+					<p>{!! nl2br(e($property->observaciones)) !!}</p>
+				</div>
+				@endif
 
 				@php
 					$ciudadNombre = optional($property->ciudad()->first())->nombre ?? 'No asignada';
@@ -384,7 +410,7 @@
 				<div class="widget pe-price-widget">
 					<div class="pe-price-widget__label">
 						@if($property->arriendo)
-							Canon mensual
+							Canon arrendamiento
 						@else
 							Precio de venta
 						@endif

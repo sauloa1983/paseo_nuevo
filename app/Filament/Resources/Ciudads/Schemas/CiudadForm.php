@@ -5,14 +5,17 @@ namespace App\Filament\Resources\Ciudads\Schemas;
 use App\Filament\Resources\Ciudads\RelationManagers\ContactsRelationManager;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Livewire;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -65,23 +68,16 @@ class CiudadForm
                         Tab::make('Información de la Sede')
                             ->icon('heroicon-o-building-office-2')
                             ->schema([
-                                Grid::make(2)
-                                    ->schema([
-                                        TextInput::make('nombre')
-                                            ->label('Nombre de la Ciudad')
-                                            ->required()
-                                            ->maxLength(100)
-                                            ->unique(ignoreRecord: true)
-                                            ->validationMessages([
-                                                'required' => 'El nombre de la ciudad es obligatorio.',
-                                                'max' => 'El nombre de la ciudad no puede tener más de 100 caracteres.',
-                                                'unique' => 'Ya existe una ciudad con este nombre. Por favor, elige otro nombre.',
-                                            ]),
-
-                                        Toggle::make('has_office')
-                                            ->label('¿Tiene Oficina Física?')
-                                            ->live()
-                                            ->default(false),
+                                TextInput::make('nombre')
+                                    ->label('Nombre de la Ciudad')
+                                    ->required()
+                                    ->maxLength(100)
+                                    ->unique(ignoreRecord: true)
+                                    ->columnSpanFull()
+                                    ->validationMessages([
+                                        'required' => 'El nombre de la ciudad es obligatorio.',
+                                        'max' => 'El nombre de la ciudad no puede tener más de 100 caracteres.',
+                                        'unique' => 'Ya existe una ciudad con este nombre. Por favor, elige otro nombre.',
                                     ]),
 
                                 FileUpload::make('imagen')
@@ -153,6 +149,132 @@ class CiudadForm
                                         'image' => 'El archivo debe ser una imagen válida.',
                                         'max' => 'La imagen no puede ser mayor a 5MB.',
                                     ]),
+
+                                Section::make('Datos de contacto')
+                                    ->description('Información principal de la ciudad cuando opera con una sola sede.')
+                                    ->schema([
+                                        Grid::make(3)
+                                            ->schema([
+                                                TextInput::make('telefono')
+                                                    ->label('Teléfono')
+                                                    ->tel()
+                                                    ->maxLength(50),
+
+                                                TextInput::make('direccion')
+                                                    ->label('Dirección')
+                                                    ->maxLength(255)
+                                                    ->columnSpan(2),
+                                            ]),
+
+                                        TextInput::make('matricula')
+                                            ->label('Matrícula')
+                                            ->maxLength(100)
+                                            ->placeholder('Ej: M. de A. 0126/96'),
+                                    ])
+                                    ->columnSpanFull(),
+
+                                Toggle::make('tiene_multiples_sedes')
+                                    ->label('¿Esta ciudad tiene 2 o más sedes?')
+                                    ->live()
+                                    ->default(false)
+                                    ->afterStateUpdated(function (Set $set, ?bool $state): void {
+                                        if (! $state) {
+                                            $set('sedes', []);
+                                        }
+                                    })
+                                    ->columnSpanFull(),
+
+                                Repeater::make('sedes')
+                                    ->label('Sedes y dependencias')
+                                    ->visible(fn (Get $get): bool => (bool) $get('tiene_multiples_sedes'))
+                                    ->dehydrated(fn (Get $get): bool => (bool) $get('tiene_multiples_sedes'))
+                                    ->columnSpanFull()
+                                    ->extraAttributes([
+                                        'class' => 'pe-ciudad-sedes-repeater',
+                                    ])
+                                    ->collapsible()
+                                    ->collapsed()
+                                    ->itemLabel(fn (array $state): ?string => filled($state['nombre_sede'] ?? null)
+                                        ? (string) $state['nombre_sede']
+                                        : 'Nueva sede')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('nombre_sede')
+                                                    ->label('Nombre de la sede')
+                                                    ->required()
+                                                    ->maxLength(100),
+
+                                                TextInput::make('telefono')
+                                                    ->label('Teléfono')
+                                                    ->tel()
+                                                    ->maxLength(50),
+                                            ]),
+
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('direccion')
+                                                    ->label('Dirección')
+                                                    ->maxLength(255),
+
+                                                TextInput::make('matricula')
+                                                    ->label('Matrícula')
+                                                    ->maxLength(100),
+                                            ]),
+
+                                        TextInput::make('email')
+                                            ->label('Correo electrónico')
+                                            ->email()
+                                            ->maxLength(255)
+                                            ->columnSpanFull(),
+
+                                        Repeater::make('dependencias')
+                                            ->label('Dependencias')
+                                            ->helperText('Si tiene más de 2 sedes, agregue aquí las dependencias y contactos adicionales de esta sede.')
+                                            ->extraAttributes([
+                                                'class' => 'pe-ciudad-dependencias-repeater',
+                                            ])
+                                            ->collapsible()
+                                            ->collapsed()
+                                            ->itemLabel(fn (array $state): ?string => filled($state['nombre_dependencia'] ?? null)
+                                                ? (string) $state['nombre_dependencia']
+                                                : 'Nueva dependencia')
+                                            ->schema([
+                                                Grid::make(2)
+                                                    ->schema([
+                                                        TextInput::make('nombre_dependencia')
+                                                            ->label('Dependencia')
+                                                            ->placeholder('Ej: Ventas, Arriendos')
+                                                            ->maxLength(100),
+
+                                                        TextInput::make('contacto_nombre')
+                                                            ->label('Nombre del contacto')
+                                                            ->maxLength(100),
+
+                                                        TextInput::make('telefono_contacto')
+                                                            ->label('Teléfono de contacto')
+                                                            ->tel()
+                                                            ->maxLength(50),
+
+                                                        TextInput::make('email_contacto')
+                                                            ->label('Correo electrónico')
+                                                            ->email()
+                                                            ->maxLength(255),
+                                                    ]),
+                                            ]),
+                                    ]),
+
+                                Toggle::make('has_office')
+                                    ->label('¿Tiene Oficina Física?')
+                                    ->live()
+                                    ->default(false)
+                                    ->columnSpanFull(),
+
+                                Toggle::make('visible_buscador')
+                                    ->label('Visible en el buscador principal')
+                                    ->helperText('Controla si la ciudad aparece en el select público del sitio web.')
+                                    ->default(true)
+                                    ->columnSpanFull(),
                             ]),
 
                         Tab::make('Canales de WhatsApp')
@@ -183,7 +305,7 @@ class CiudadForm
 
                         Tab::make('Dependencias y Contactos')
                             ->icon('heroicon-o-user-group')
-                            ->visible(fn (Get $get): bool => (bool) $get('has_office'))
+                            ->visible(fn (Get $get): bool => (bool) $get('has_office') && ! (bool) $get('tiene_multiples_sedes'))
                             ->schema([
                                 Placeholder::make('contacts_save_hint')
                                     ->label('')

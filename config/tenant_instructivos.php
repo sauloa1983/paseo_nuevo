@@ -1,24 +1,18 @@
 <?php
 
 /**
- * Instructivos y manuales (Lonja de Propiedad de Santander).
- * Sustituya image por las fotos definitivas en public/images/instructivos/.
- * Sustituya file por los PDF en public/documents/instructivos/.
+ * Instructivos y manuales para arrendatarios.
+ * PDFs en public/documents/instructivos/.
  */
 return [
     [
         'title' => 'Manual del arrendatario',
-        'image' => 'images/manual_arrendatario.jpg',
-        'url' => 'documents/instructivos/manual-arrendatario.pdf',
+        'description' => 'Guía completa para arrendatarios sobre derechos, deberes y trámites.',
+        'file' => 'documents/instructivos/manual-arrendatario.pdf',
     ],
     [
         'title' => 'Instructivo para arrendatarios',
-        'image' => 'images/instructivo_arrendatarios.jpg',
+        'description' => 'Pasos y requisitos para el proceso de arrendamiento.',
         'file' => 'documents/instructivos/instructivo-arrendatarios.pdf',
-    ],
-    [
-        'title' => 'Instructivo para propietarios',
-        'image' => 'images/instructivo_propietarios.jpg',
-        'file' => 'documents/instructivos/instructivo-propietarios.pdf',
     ],
 ];

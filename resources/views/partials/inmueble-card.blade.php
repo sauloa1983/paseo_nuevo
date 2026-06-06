@@ -47,19 +47,33 @@
         ? 'N/A'
         : $inmueble->no_alcobas . ' ' . ((int) $inmueble->no_alcobas === 1 ? 'alcoba' : 'alcobas');
 
-    $parqueaderosTexto = empty($inmueble->garajes)
-        ? 'N/A'
-        : $inmueble->garajes . ' ' . ((int) $inmueble->garajes === 1 ? 'pqdo.' : 'pqdos.');
+    $parqMoto = (string) ($inmueble->parq_moto ?? '') === '1';
+    $parqComunal = (string) ($inmueble->parq_comunal ?? '') === '1';
 
-    $badgeStatusClass = match ($inmueble->badge_status ?? null) {
-        'OPORTUNIDAD' => 'pe-property-card__badge--oportunidad',
-        'NEGOCIABLE' => 'pe-property-card__badge--negociable',
-        'BAJO_DE_PRECIO' => 'pe-property-card__badge--bajo-precio',
-        default => null,
-    };
+    if ($parqMoto) {
+        $parqIcono = 'fa fa-motorcycle';
+        $parqueaderosTexto = '1 pqdo.';
+        $mostrarParqueadero = true;
+    } elseif ($parqComunal) {
+        $parqIcono = 'fa fa-car';
+        $parqueaderosTexto = 'comunal';
+        $mostrarParqueadero = true;
+    } elseif (! empty($inmueble->garajes)) {
+        $parqIcono = 'fa fa-car';
+        $parqueaderosTexto = $inmueble->garajes . ' ' . ((int) $inmueble->garajes === 1 ? 'pqdo.' : 'pqdos.');
+        $mostrarParqueadero = true;
+    } else {
+        $mostrarParqueadero = false;
+    }
+
+    $badgeStatusClass = $inmueble->badgeStatusCssClass();
+    $esEstrena = ($inmueble->badge_status ?? null) === 'ESTRENA';
+    $tieneDisponibilidad = filled($inmueble->disponibilidad_texto);
+    $tieneEtiquetaComercial = filled($inmueble->badge_status_etiqueta) && filled($badgeStatusClass);
+    $etiquetaEnSlotDisponibilidad = $tieneEtiquetaComercial && ! $tieneDisponibilidad;
 @endphp
 
-<article class="pe-property-card">
+<article @class(['pe-property-card', 'pe-property-card--estrena' => $esEstrena])>
     <a href="{{ $showUrl }}" class="pe-property-card__media" tabindex="-1" aria-hidden="true">
         @if($fotoUrl)
             <img
@@ -77,26 +91,37 @@
             </div>
         @endif
 
-        @if($inmueble->disponibilidad_texto)
+        @if($tieneDisponibilidad)
             <span class="pe-property-card__badge pe-property-card__badge--disponibilidad">
                 {{ $inmueble->disponibilidad_texto }}
+            </span>
+        @elseif($etiquetaEnSlotDisponibilidad)
+            <span class="pe-property-card__badge {{ $badgeStatusClass }} pe-property-card__badge--comercial-slot">
+                @if($esEstrena)
+                    <i class="fa fa-star" aria-hidden="true"></i>
+                @endif
+                {{ $inmueble->badge_status_etiqueta }}
             </span>
         @endif
 
         <div class="pe-property-card__badges">
-            <div class="pe-property-card__badges-start">
-                @if($inmueble->badge_status_etiqueta && $badgeStatusClass)
-                    <span class="pe-property-card__badge {{ $badgeStatusClass }}">
-                        {{ $inmueble->badge_status_etiqueta }}
-                    </span>
-                @endif
-            </div>
             <div class="pe-property-card__badges-end">
                 @if($esNuevo)
                     <span class="pe-property-card__badge pe-property-card__badge--new">Nuevo</span>
                 @endif
                 <span class="pe-property-card__badge pe-property-card__badge--code">Código: {{ $inmueble->codigo }}</span>
             </div>
+
+            @if($tieneEtiquetaComercial && ! $etiquetaEnSlotDisponibilidad)
+                <div class="pe-property-card__badges-start">
+                    <span class="pe-property-card__badge {{ $badgeStatusClass }}">
+                        @if($esEstrena)
+                            <i class="fa fa-star" aria-hidden="true"></i>
+                        @endif
+                        {{ $inmueble->badge_status_etiqueta }}
+                    </span>
+                </div>
+            @endif
         </div>
 
         <span class="pe-property-card__price">
@@ -135,9 +160,9 @@
                     <span>{{ $alcobasTexto }}</span>
                 </li>
             @endif
-            @if($inmueble->garajes)
+            @if($mostrarParqueadero)
                 <li>
-                    <i class="fa fa-car" aria-hidden="true" title="Parqueaderos"></i>
+                    <i class="{{ $parqIcono }}" aria-hidden="true" title="Parqueaderos"></i>
                     <span>{{ $parqueaderosTexto }}</span>
                 </li>
             @endif

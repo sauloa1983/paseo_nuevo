@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Categorias;
 
 use App\Filament\Resources\Categorias\Pages\ManageCategorias;
+use App\Filament\Support\InmuebleLinkedDeleteGuard;
 use App\Models\Categoria;
 use App\Models\TipoInmueble;
 use BackedEnum;
@@ -77,31 +78,38 @@ class CategoriaResource extends Resource
                             ->title('Tipo de inmueble actualizado')
                             ->body('El tipo de inmueble se actualizó correctamente.'),
                     ),
-                DeleteAction::make()
-                    ->color('danger')
-                    ->icon('heroicon-m-trash')
-                    ->modalIconColor('danger')
-                    ->modalHeading('¿Eliminar tipo de inmueble?')
-                    ->modalDescription('¿Está seguro de que desea eliminar este tipo de inmueble? Esta acción no se puede deshacer.')
-                    ->iconButton()
-                    ->size('xl')
-                    ->modalSubmitAction(fn ($action) => $action->color('danger'))
-                    ->modalCancelAction(fn ($action) => $action->color('gray'))
-                    ->color('gray')
-                    ->tooltip('Eliminar tipo de inmueble')
-                    ->extraAttributes([
-                        'class' => 'group hover:animate-bounce',
-                    ])
-                    ->successNotification(
-                        Notification::make()
-                            ->danger()
-                            ->title('Tipo de inmueble eliminado')
-                            ->body('El tipo de inmueble se eliminó correctamente.'),
-                    ),
+                InmuebleLinkedDeleteGuard::wrapDeleteAction(
+                    DeleteAction::make()
+                        ->color('danger')
+                        ->icon('heroicon-m-trash')
+                        ->modalIconColor('danger')
+                        ->modalHeading('¿Eliminar tipo de inmueble?')
+                        ->modalDescription('¿Está seguro de que desea eliminar este tipo de inmueble? Esta acción no se puede deshacer.')
+                        ->iconButton()
+                        ->size('xl')
+                        ->modalSubmitAction(fn ($action) => $action->color('danger'))
+                        ->modalCancelAction(fn ($action) => $action->color('gray'))
+                        ->color('gray')
+                        ->tooltip('Eliminar tipo de inmueble')
+                        ->extraAttributes([
+                            'class' => 'group hover:animate-bounce',
+                        ])
+                        ->successNotification(
+                            Notification::make()
+                                ->danger()
+                                ->title('Tipo de inmueble eliminado')
+                                ->body('El tipo de inmueble se eliminó correctamente.'),
+                        ),
+                    'No se puede eliminar el tipo de inmueble',
+                ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    InmuebleLinkedDeleteGuard::wrapDeleteBulkAction(
+                        DeleteBulkAction::make(),
+                        'No se pueden eliminar algunos tipos de inmueble',
+                        'tipo',
+                    ),
                 ]),
             ]);
     }

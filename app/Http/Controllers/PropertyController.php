@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Ciudad;
 use App\Models\PromotionalVideo;
 use App\Models\Property;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ class PropertyController extends Controller
             ->pluck('tipo','id');
 
 
-        $ciudades = DB::table('ciudades')
+        $ciudades = Ciudad::query()
+            ->visibleInBuscador()
             ->orderBy('nombre')
             ->pluck('nombre', 'id');
 
@@ -106,9 +108,9 @@ class PropertyController extends Controller
 
             /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            //Busca por ciudad
-            if ($request->filled('ciudad')) {
-                $query->where('ciudad', $request->ciudad);  // ← Aquí sí usa el valor 3
+            // Busca por ciudad (solo ciudades visibles en el buscador público)
+            if ($request->filled('ciudad') && Ciudad::esVisibleEnBuscador($request->ciudad)) {
+                $query->where('ciudad', (int) $request->ciudad);
             }
             //Busca por barrio
             if ($request->filled('barrio')) {
@@ -220,7 +222,7 @@ class PropertyController extends Controller
             dump($query->getBindings());*/
 
         $properties = $query
-            ->leftJoin('usuarios', 'inmuebles.asesor', '=', 'usuarios.cedula')
+            ->leftJoin('usuarios', 'inmuebles.asesor', '=', 'usuarios.id')
             ->select(
                 'inmuebles.*',
                 'usuarios.nombres as asesor_nombres',

@@ -93,7 +93,7 @@
                                     </div>
 
                                     <a href="#" class="more-search-options-trigger" data-open-title="Mas opciones" data-close-title="Menos opciones"></a>
-                                    <div class="more-search-options">
+                                    <div class="more-search-options relative">
                                         <div class="more-search-options-container">
                                             <div class="row with-forms">
                                                 <div class="col-md-6">

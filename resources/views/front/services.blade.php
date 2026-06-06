@@ -130,7 +130,6 @@
                             </li>
                         @endforeach
                     </ul>
-                    <a href="{{ $card['cta'] }}" class="pe-card__cta">Conoce más &rarr;</a>
                 </article>
             @endforeach
         </div>

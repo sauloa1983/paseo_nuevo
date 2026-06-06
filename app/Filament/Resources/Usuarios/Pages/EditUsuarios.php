@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Usuarios\Pages;
 
+use App\Filament\Resources\Usuarios\Tables\UsuariosTable;
 use App\Filament\Resources\Usuarios\UsuariosResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -14,7 +15,7 @@ class EditUsuarios extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()
+            UsuariosTable::makeDeleteAction()
                 ->label('Eliminar Usuario')
                 ->icon('heroicon-m-trash'),
         ];

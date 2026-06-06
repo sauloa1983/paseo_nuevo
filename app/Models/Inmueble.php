@@ -70,7 +70,7 @@ class Inmueble extends Model
 
     public function userAsesor()
     {
-        return $this->belongsTo(Usuario::class, 'cedula');
+        return $this->belongsTo(Usuario::class, 'asesor', 'id');
     }
 
 }

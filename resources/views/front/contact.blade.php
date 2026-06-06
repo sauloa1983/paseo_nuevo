@@ -80,7 +80,13 @@
                     x-show="activeTab === '{{ $ciudad->id }}'"
                     x-cloak
                 >
-                    @if ($ciudad->contacts->isNotEmpty())
+                    @if ($ciudad->hasContactSedes())
+                        <div class="pe-contact-sedes-stack">
+                            @foreach ($ciudad->contactSedesForDisplay() as $sede)
+                                @include('partials.office-sede-block', ['sede' => $sede, 'ciudad' => $ciudad])
+                            @endforeach
+                        </div>
+                    @elseif ($ciudad->contacts->isNotEmpty())
                         <div class="pe-contact-dept-grid">
                             @foreach ($ciudad->contacts as $contacto)
                                 @include('partials.office-contact-card', ['contacto' => $contacto, 'ciudad' => $ciudad])
@@ -129,9 +135,19 @@
                         <span class="pe-contact-info-list__icon" aria-hidden="true"><i class="fa fa-clock-o"></i></span>
                         <div>
                             <strong>Horarios de atención</strong>
+                            @php
+                                $officeHoursNewSchedule = now()->startOfDay()->gte(
+                                    \Illuminate\Support\Carbon::parse('2026-07-16')->startOfDay()
+                                );
+                            @endphp
                             <p>
-                                Lunes a viernes: 8:00 a 12:00 / 1:00 a 5:00<br>
-                                Sábado: 8:00 a 12:00
+                                @if ($officeHoursNewSchedule)
+                                    Lunes a jueves: 7:30 AM - 12:00 PM / 1:00 PM - 5:00 PM<br>
+                                    Viernes: 7:30 AM - 12:00 PM / 1:00 PM - 4:30 PM
+                                @else
+                                    Lunes a viernes: 8:00 AM - 12:00 PM / 1:00 PM - 5:00 PM<br>
+                                    Sábado: 8:00 AM - 12:00 PM
+                                @endif
                             </p>
                         </div>
                     </li>
@@ -145,13 +161,13 @@
                             </p>
                         </div>
                     </li>
-                    <li>
+                    <!--<li>
                         <span class="pe-contact-info-list__icon" aria-hidden="true"><i class="fa fa-envelope-o"></i></span>
                         <div>
                             <strong>Correo electrónico</strong>
                             <p><a href="mailto:{{ $emailGeneral }}">{{ $emailGeneral }}</a></p>
                         </div>
-                    </li>
+                    </li>-->
                 </ul>
 
                 <div class="pe-contact-map">

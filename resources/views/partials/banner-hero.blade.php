@@ -31,12 +31,12 @@
                 {{-- Bloque condicionado --}}
                 @if ($showActions ?? false)
                 <div class="pe-services-hero__actions">
-                    @if (whatsapp_url_legal())
+                    <!--@if (whatsapp_url_legal())
                         <a href="{{ whatsapp_url_legal() }}" target="_blank" rel="noopener noreferrer" class="pe-services-btn pe-services-btn--primary">
                             <i class="fa fa-whatsapp" aria-hidden="true"></i>
                             Hablar con un asesor
                         </a>
-                    @endif
+                    @endif-->
                     <a href="{{ route('contact') }}" class="pe-services-btn pe-services-btn--outline">
                         <i class="fa fa-phone" aria-hidden="true"></i>
                         Centro de Ayuda
