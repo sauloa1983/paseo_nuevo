@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Ciudads\Tables;
 
 use App\Filament\Support\InmuebleLinkedDeleteGuard;
+use App\Filament\Support\StandardTable;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -17,7 +18,7 @@ class CiudadsTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->columns([
                 TextColumn::make('nombre')
                     ->label('Ciudad')

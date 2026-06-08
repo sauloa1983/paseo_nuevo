@@ -243,13 +243,16 @@
         display: none !important;
     }
 
-    /* Tabla de inmuebles: scroll vertical/horizontal y acciones visibles */
+    /* Tablas del admin: scroll acotado, cabecera fija y acciones visibles */
+    .pe-admin-table .fi-ta-content-ctn,
     .pe-inmuebles-table .fi-ta-content-ctn {
         max-height: calc(100dvh - 17rem);
         overflow: auto;
         overscroll-behavior: contain;
     }
 
+    .pe-admin-table .fi-ta-table thead th,
+    .pe-admin-table .fi-ta-header-cell,
     .pe-inmuebles-table .fi-ta-table thead th,
     .pe-inmuebles-table .fi-ta-header-cell {
         position: sticky;
@@ -258,6 +261,9 @@
         background-color: #f9fafb !important;
     }
 
+    .pe-admin-table .fi-ta-table td:last-child,
+    .pe-admin-table .fi-ta-table th:last-child,
+    .pe-admin-table .fi-ta-record .fi-ta-actions,
     .pe-inmuebles-table .fi-ta-table td:last-child,
     .pe-inmuebles-table .fi-ta-table th:last-child,
     .pe-inmuebles-table .fi-ta-record .fi-ta-actions {
@@ -268,15 +274,18 @@
         box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.08);
     }
 
+    .pe-admin-table .fi-ta-table thead th:last-child,
     .pe-inmuebles-table .fi-ta-table thead th:last-child {
         z-index: 15;
         background-color: #f9fafb !important;
     }
 
+    .pe-admin-table .fi-ta-table tbody tr:nth-child(even) td:last-child,
     .pe-inmuebles-table .fi-ta-table tbody tr:nth-child(even) td:last-child {
         background-color: #f9fafb !important;
     }
 
+    .pe-admin-table .fi-ta-record:nth-child(even) .fi-ta-actions,
     .pe-inmuebles-table .fi-ta-record:nth-child(even) .fi-ta-actions {
         background-color: #f9fafb !important;
     }

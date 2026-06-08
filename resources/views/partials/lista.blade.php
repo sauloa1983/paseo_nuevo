@@ -13,12 +13,27 @@
             'showAsesor' => true,
         ])
     @empty
-    <div class="col-12">
-        <div class="alert alert-info text-center" style="padding: 100px 0;">
-            <span class="im im-icon-Search-onCloud ico-big"></span>
+    <div class="pe-empty-results">
+        <div class="pe-empty-results__message">
+            <span class="im im-icon-Search-onCloud ico-big" aria-hidden="true"></span>
             <h1>No encontramos lo que buscas</h1>
             <p>Lo sentimos, no hay resultados que coincidan con tu búsqueda. Intenta ajustar los filtros.</p>
         </div>
+
+        @if(($suggestedProperties ?? collect())->isNotEmpty())
+            <div class="pe-empty-results__suggestions">
+                <h2 class="pe-empty-results__suggestions-title">Mira estos inmuebles si te interesan</h2>
+                <div class="pe-empty-results__suggestions-grid">
+                    @foreach ($suggestedProperties as $property)
+                        @include('partials.inmueble-card', [
+                            'inmueble' => $property,
+                            'modo' => 'auto',
+                            'showAsesor' => true,
+                        ])
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
     @endforelse
 </div>

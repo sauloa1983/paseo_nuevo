@@ -238,80 +238,87 @@
 </section>
 <!-- End search -->
 
-<div class="container">
-	<div class="row fullwidth-layout">
-		<div class="col-md-12"></div>
-			<!-- Validamos que hallan resultados -->
+@php
+    $activeLayout = request('layout', 'grid-three');
+    $layoutQuery = fn (string $layout) => '?' . http_build_query(array_merge(request()->except('page'), ['layout' => $layout]));
+@endphp
 
-				<!-- Sorting / Layout Switcher -->
-            <div class="row margin-bottom-15">
-                <div class="col-md-6">
-                    <!-- Sort by -->
-                    <div class="sort-by">
-                        <label>Ordenar por:</label>
+<section class="pe-inmuebles-results">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
 
-                        <!-- MINI-FORM para ordenamiento -->
-                        <form action="{{ url()->current() }}" method="GET" style="display: inline;">
-                            <!-- Copiar TODOS los filtros actuales -->
-                            @foreach(request()->except('order', 'page') as $key => $value)
-                                @if(is_array($value))
-                                    @foreach($value as $item)
-                                        @if(is_scalar($item) && $item !== '')
-                                            <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
-                                        @endif
-                                    @endforeach
-                                @elseif(is_scalar($value) && $value !== '')
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                @endif
-                            @endforeach
+                <div class="pe-inmuebles-results__toolbar row margin-bottom-20">
+                    <div class="col-md-6">
+                        <div class="sort-by pe-inmuebles-results__sort">
+                            <label for="inmuebles-order">Ordenar por:</label>
 
-                            <div class="sort-by-select">
-                                <select data-placeholder="Default order" class="chosen-select-no-single" name="order" onchange="this.form.submit()">
-                                    <option value="">Predeterminado</option>
-                                    <option value="precio_asc" {{ request('order') == 'precio_asc' ? 'selected' : '' }}>Precio: Bajo → Alto</option>
-                                    <option value="precio_desc" {{ request('order') == 'precio_desc' ? 'selected' : '' }}>Precio: Alto → Bajo</option>
-                                </select>
-                            </div>
-                        </form>
+                            <form action="{{ url()->current() }}" method="GET" class="pe-inmuebles-results__sort-form">
+                                @foreach(request()->except('order', 'page') as $key => $value)
+                                    @if(is_array($value))
+                                        @foreach($value as $item)
+                                            @if(is_scalar($item) && $item !== '')
+                                                <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                                            @endif
+                                        @endforeach
+                                    @elseif(is_scalar($value) && $value !== '')
+                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @endif
+                                @endforeach
+
+                                <div class="sort-by-select">
+                                    <select
+                                        id="inmuebles-order"
+                                        data-placeholder="Default order"
+                                        class="chosen-select-no-single custom-select"
+                                        name="order"
+                                        onchange="this.form.submit()"
+                                    >
+                                        <option value="">Predeterminado</option>
+                                        <option value="precio_asc" {{ request('order') == 'precio_asc' ? 'selected' : '' }}>Precio: Bajo → Alto</option>
+                                        <option value="precio_desc" {{ request('order') == 'precio_desc' ? 'selected' : '' }}>Precio: Alto → Bajo</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="layout-switcher pe-inmuebles-results__layout" aria-label="Cambiar vista de resultados">
+                            <a href="{{ $layoutQuery('list') }}"
+                               class="list {{ $activeLayout === 'list' ? 'active' : '' }}"
+                               data-layout="list"
+                               title="Vista lista">
+                                <i class="fa fa-th-list" aria-hidden="true"></i>
+                            </a>
+                            <a href="{{ $layoutQuery('grid') }}"
+                               class="grid {{ $activeLayout === 'grid' ? 'active' : '' }}"
+                               data-layout="grid"
+                               title="Vista grilla 2 columnas">
+                                <i class="fa fa-th-large" aria-hidden="true"></i>
+                            </a>
+                            <a href="{{ $layoutQuery('grid-three') }}"
+                               class="grid-three {{ $activeLayout === 'grid-three' ? 'active' : '' }}"
+                               data-layout="grid-three"
+                               title="Vista grilla 3 columnas">
+                                <i class="fa fa-th" aria-hidden="true"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-6">
-                    @php
-                        $activeLayout = request('layout', 'grid-three');
-                        $layoutQuery = fn (string $layout) => '?' . http_build_query(array_merge(request()->except('page'), ['layout' => $layout]));
-                    @endphp
-                    <!-- Layout Switcher -->
-                    <div class="layout-switcher">
-                        <a href="{{ $layoutQuery('list') }}"
-                        class="list {{ $activeLayout === 'list' ? 'active' : '' }}" data-layout="list">
-                            <i class="fa fa-th-list"></i>
-                        </a>
-                        <a href="{{ $layoutQuery('grid') }}"
-                        class="grid {{ $activeLayout === 'grid' ? 'active' : '' }}" data-layout="grid">
-                            <i class="fa fa-th-large"></i>
-                        </a>
-                        <a href="{{ $layoutQuery('grid-three') }}"
-                        class="grid-three {{ $activeLayout === 'grid-three' ? 'active' : '' }}" data-layout="grid-three">
-                            <i class="fa fa-th"></i>
-                        </a>
-                    </div>
-
+                <div id="listings-container_gral" class="pe-inmuebles-results__grid">
+                    @include('partials.lista', [
+                        'properties' => $properties ?? collect(),
+                        'layout' => $layout ?? 'grid-three',
+                        'suggestedProperties' => $suggestedProperties ?? collect(),
+                    ])
                 </div>
+
             </div>
-
-
-			<!-- RESULTADOS (contenedor AJAX) -->
-			<div id="listings-container_gral">
-				@include('partials.lista', [
-                    'properties' => $properties ?? collect(),
-                    'layout' => $layout ?? 'grid-three',
-                ])
-			</div>
-		</div>
+        </div>
     </div>
-</div>
-<div class="margin-top-35"></div>
+</section>
 @endsection
 
 

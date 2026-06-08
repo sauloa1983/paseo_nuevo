@@ -122,43 +122,60 @@ class Ciudad extends Model
     }
 
     /**
-     * @return array<string, mixed>
+     * Oficinas de la ciudad para el tooltip del footer.
+     * Con varias sedes: cada una con nombre y sus datos debajo.
+     * Con una sola oficina: un bloque sin encabezado de sucursal.
+     *
+     * @return array{
+     *     city: string,
+     *     offices: list<array{
+     *         name: ?string,
+     *         address: string,
+     *         phones: list<string>,
+     *         license: string
+     *     }>
+     * }
      */
     public function toFooterOfficePayload(): array
     {
-        $payload = [
-            'city' => $this->nombre,
-        ];
+        $offices = [];
 
         if ($this->tiene_multiples_sedes && filled($this->sedes)) {
-            $payload['sedes'] = collect($this->sedes)
-                ->filter(fn (array $sede): bool => filled($sede['nombre_sede'] ?? null))
-                ->map(fn (array $sede): array => [
-                    'label' => (string) $sede['nombre_sede'],
-                    'address' => (string) ($sede['direccion'] ?? ''),
+            foreach ($this->sedes as $sede) {
+                if (! is_array($sede) || blank($sede['nombre_sede'] ?? null)) {
+                    continue;
+                }
+
+                $offices[] = [
+                    'name' => (string) $sede['nombre_sede'],
+                    'address' => trim((string) ($sede['direccion'] ?? '')),
                     'phones' => self::parsePhones($sede['telefono'] ?? null),
-                    'email' => (string) ($sede['email'] ?? ''),
-                    'license' => (string) ($sede['matricula'] ?? ''),
-                    'dependencias' => collect($sede['dependencias'] ?? [])
-                        ->filter(fn (array $dep): bool => filled($dep['nombre_dependencia'] ?? null))
-                        ->map(fn (array $dep): array => [
-                            'nombre' => (string) $dep['nombre_dependencia'],
-                            'contacto' => (string) ($dep['contacto_nombre'] ?? ''),
-                            'telefono' => (string) ($dep['telefono_contacto'] ?? ''),
-                            'email' => (string) ($dep['email_contacto'] ?? ''),
-                        ])
-                        ->values()
-                        ->all(),
-                ])
-                ->values()
-                ->all();
-        } else {
-            $payload['address'] = (string) ($this->direccion ?? '');
-            $payload['phones'] = self::parsePhones($this->telefono);
-            $payload['license'] = (string) ($this->matricula ?? '');
+                    'license' => trim((string) ($sede['matricula'] ?? '')),
+                ];
+            }
         }
 
-        return $payload;
+        if ($offices === []) {
+            $offices[] = [
+                'name' => null,
+                'address' => trim((string) ($this->direccion ?? '')),
+                'phones' => self::parsePhones($this->telefono),
+                'license' => trim((string) ($this->matricula ?? '')),
+            ];
+        }
+
+        $offices = array_values(array_filter(
+            $offices,
+            fn (array $office): bool => filled($office['name'])
+                || $office['address'] !== ''
+                || $office['phones'] !== []
+                || $office['license'] !== '',
+        ));
+
+        return [
+            'city' => $this->nombre,
+            'offices' => $offices,
+        ];
     }
 
     public function hasContactSedes(): bool

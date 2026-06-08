@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Barrios;
 
 use App\Filament\Resources\Barrios\Pages\ManageBarrios;
 use App\Filament\Support\InmuebleLinkedDeleteGuard;
+use App\Filament\Support\StandardTable;
 use App\Models\Barrio;
 use App\Models\Ciudad;
 use BackedEnum;
@@ -73,7 +74,7 @@ class BarrioResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->recordTitleAttribute('Barrios')
             ->columns([
                 TextColumn::make('nombre')
@@ -84,6 +85,13 @@ class BarrioResource extends Resource
                     ->label('Municipio')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('inmueble_count')
+                    ->label('Inmuebles')
+                    ->counts('inmueble')
+                    ->sortable()
+                    ->alignCenter()
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'success' : 'gray'),
             ])
             ->defaultSort('nombre', 'asc')
             ->filters([

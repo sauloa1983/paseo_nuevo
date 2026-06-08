@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Banners;
 
 use App\Filament\Resources\Banners\Pages\ManageBanners;
 use App\Filament\Resources\Banners\Schemas\BannerForm;
+use App\Filament\Support\StandardTable;
 use App\Models\Banner;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -42,7 +43,7 @@ class BannerResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->columns([
                 ImageColumn::make('image_path')
                     ->label('Miniatura')

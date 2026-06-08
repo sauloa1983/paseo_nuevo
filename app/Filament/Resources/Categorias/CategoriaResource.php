@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Categorias;
 
 use App\Filament\Resources\Categorias\Pages\ManageCategorias;
 use App\Filament\Support\InmuebleLinkedDeleteGuard;
+use App\Filament\Support\StandardTable;
 use App\Models\Categoria;
 use App\Models\TipoInmueble;
 use BackedEnum;
@@ -49,7 +50,7 @@ class CategoriaResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->recordTitleAttribute('tipo')
             ->columns([
                 TextColumn::make('tipo')

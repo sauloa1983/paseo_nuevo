@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Inmuebles\Tables;
 
+use App\Filament\Support\StandardTable;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DeleteAction;
@@ -18,11 +19,7 @@ class InmueblesTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
-            ->extraAttributes(['class' => 'pe-inmuebles-table'])
-            ->defaultPaginationPageOption(10)
-            ->paginationPageOptions([10, 25, 50, 100])
-            ->scrollToTopOnPageChange()
+        return StandardTable::configure($table)
             ->recordActionsPosition(RecordActionsPosition::AfterColumns)
             ->columns([
                 TextColumn::make('codigo')

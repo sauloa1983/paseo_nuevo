@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PromotionalVideos\Tables;
 
+use App\Filament\Support\StandardTable;
 use App\Filament\Resources\PromotionalVideos\Schemas\PromotionalVideoForm;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -16,7 +17,7 @@ class PromotionalVideosTable
 {
     public static function configure(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->columns([
                 TextColumn::make('title')
                     ->label('Título')

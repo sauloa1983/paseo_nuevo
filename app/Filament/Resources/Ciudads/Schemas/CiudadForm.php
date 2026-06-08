@@ -150,6 +150,21 @@ class CiudadForm
                                         'max' => 'La imagen no puede ser mayor a 5MB.',
                                     ]),
 
+                                Toggle::make('tiene_multiples_sedes')
+                                    ->label('¿Esta ciudad tiene 2 o más sedes?')
+                                    ->live()
+                                    ->default(false)
+                                    ->afterStateUpdated(function (Set $set, ?bool $state): void {
+                                        if ($state) {
+                                            $set('telefono', null);
+                                            $set('direccion', null);
+                                            $set('matricula', null);
+                                        } else {
+                                            $set('sedes', []);
+                                        }
+                                    })
+                                    ->columnSpanFull(),
+
                                 Section::make('Datos de contacto')
                                     ->description('Información principal de la ciudad cuando opera con una sola sede.')
                                     ->schema([
@@ -171,17 +186,8 @@ class CiudadForm
                                             ->maxLength(100)
                                             ->placeholder('Ej: M. de A. 0126/96'),
                                     ])
-                                    ->columnSpanFull(),
-
-                                Toggle::make('tiene_multiples_sedes')
-                                    ->label('¿Esta ciudad tiene 2 o más sedes?')
-                                    ->live()
-                                    ->default(false)
-                                    ->afterStateUpdated(function (Set $set, ?bool $state): void {
-                                        if (! $state) {
-                                            $set('sedes', []);
-                                        }
-                                    })
+                                    ->visible(fn (Get $get): bool => ! (bool) $get('tiene_multiples_sedes'))
+                                    ->dehydrated(fn (Get $get): bool => ! (bool) $get('tiene_multiples_sedes'))
                                     ->columnSpanFull(),
 
                                 Repeater::make('sedes')

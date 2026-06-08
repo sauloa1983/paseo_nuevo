@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Usuarios\Tables;
 
+use App\Filament\Support\StandardTable;
 use App\Models\Usuario;
 use Dom\Text;
 use Filament\Actions\BulkActionGroup;
@@ -36,7 +37,7 @@ class UsuariosTable
 
     public static function configure(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->query(
                 Usuario::query()->where('cargo', '!=', 1)  // Asegúrate de cargar la relación 'cargos'
             )

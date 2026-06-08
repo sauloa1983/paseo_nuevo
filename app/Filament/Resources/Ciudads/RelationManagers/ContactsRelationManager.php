@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Ciudads\RelationManagers;
 
+use App\Filament\Support\StandardTable;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -63,7 +64,7 @@ class ContactsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->recordTitleAttribute('department')
             ->columns([
                 TextColumn::make('department')

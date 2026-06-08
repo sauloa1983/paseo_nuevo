@@ -85,73 +85,48 @@
 								x-transition:leave-end="pe-office-tooltip-leave-end"
 								role="tooltip"
 							>
-								@if (! empty($office['sedes']))
-									@foreach ($office['sedes'] as $sede)
-										<div class="pe-office-tooltip__block">
-											<p class="pe-office-tooltip__sede">{{ $sede['label'] }}</p>
-											@if (! empty($sede['address']))
-												<p class="pe-office-tooltip__address">
-													<i class="fa fa-map-marker" aria-hidden="true"></i>
-													<span>{{ $sede['address'] }}</span>
-												</p>
-											@endif
-											@if (! empty($sede['phones']))
-												<p class="pe-office-tooltip__phones">
-													<i class="fa fa-phone" aria-hidden="true"></i>
-													<span>{{ implode(' · ', $sede['phones']) }}</span>
-												</p>
-											@endif
-											@if (! empty($sede['email']))
-												<p class="pe-office-tooltip__text">
-													<i class="fa fa-envelope-o" aria-hidden="true"></i>
-													<span>{{ $sede['email'] }}</span>
-												</p>
-											@endif
-											@if (! empty($sede['license']))
-												<p class="pe-office-tooltip__text">
-													<i class="fa fa-file-text" aria-hidden="true"></i>
-													<span>{{ $sede['license'] }}</span>
-												</p>
-											@endif
-											@foreach ($sede['dependencias'] ?? [] as $dependencia)
-												<p class="pe-office-tooltip__text">
-													<i class="fa fa-user" aria-hidden="true"></i>
-													<span>
-														{{ $dependencia['nombre'] }}
-														@if (filled($dependencia['contacto'] ?? null))
-															— {{ $dependencia['contacto'] }}
-														@endif
-														@if (filled($dependencia['telefono'] ?? null))
-															· {{ $dependencia['telefono'] }}
-														@endif
-														@if (filled($dependencia['email'] ?? null))
-															· {{ $dependencia['email'] }}
-														@endif
-													</span>
-												</p>
-											@endforeach
-										</div>
-									@endforeach
-								@else
-									@if (! empty($office['address']))
-										<p class="pe-office-tooltip__address">
-											<i class="fa fa-map-marker" aria-hidden="true"></i>
-											<span>{{ $office['address'] }}</span>
+								@foreach ($office['offices'] ?? [] as $branch)
+									@php
+										$hasAddress = ! empty($branch['address']);
+										$hasPhones = ! empty($branch['phones']);
+										$hasLicense = ! empty($branch['license']);
+										$showBranchName = filled($branch['name'] ?? null) && count($office['offices']) > 1;
+										$hasVisibleBranch = $showBranchName || $hasAddress || $hasPhones || $hasLicense;
+									@endphp
+
+									@if (! $hasVisibleBranch)
+										@continue
+									@endif
+
+									@if ($showBranchName)
+										<p class="pe-office-tooltip__name">{{ $branch['name'] }}</p>
+									@endif
+
+									@if ($hasAddress)
+										<p class="pe-office-tooltip__row">
+											<i class="bi bi-geo-alt" aria-hidden="true"></i>
+											<span>{{ $branch['address'] }}</span>
 										</p>
 									@endif
-									@if (! empty($office['phones']))
-										<p class="pe-office-tooltip__phones">
-											<i class="fa fa-phone" aria-hidden="true"></i>
-											<span>{{ implode(' · ', $office['phones']) }}</span>
+
+									@if ($hasPhones)
+										<p class="pe-office-tooltip__row">
+											<i class="bi bi-telephone" aria-hidden="true"></i>
+											<span>{{ implode(' · ', $branch['phones']) }}</span>
 										</p>
 									@endif
-									@if (! empty($office['license']))
-										<p class="pe-office-tooltip__text">
-											<i class="fa fa-file-text" aria-hidden="true"></i>
-											<span>{{ $office['license'] }}</span>
+
+									@if ($hasLicense)
+										<p class="pe-office-tooltip__row">
+											<i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+											<span>{{ $branch['license'] }}</span>
 										</p>
 									@endif
-								@endif
+
+									@if (! $loop->last)
+										<div class="pe-office-tooltip__divider" aria-hidden="true"></div>
+									@endif
+								@endforeach
 							</div>
 						</li>
 					@endforeach

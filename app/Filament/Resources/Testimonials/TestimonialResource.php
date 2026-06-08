@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Testimonials;
 
 use App\Filament\Resources\Testimonials\Pages\ManageTestimonials;
+use App\Filament\Support\StandardTable;
 use App\Models\Testimonial;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -88,7 +89,7 @@ class TestimonialResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return StandardTable::configure($table)
             ->recordTitleAttribute('Testimonios')
             ->columns([
                 TextColumn::make('descripcion')

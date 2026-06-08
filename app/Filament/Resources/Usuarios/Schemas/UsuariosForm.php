@@ -389,7 +389,7 @@ class UsuariosForm
                                                         ->same('passwordConfirmation')
                                                         ->maxLength(255)
                                                         ->helperText(fn ($livewire): string => $livewire instanceof CreateRecord
-                                                            ? 'Por defecto: ' . self::DEFAULT_PASSWORD . '. Puede cambiarla si lo desea.'
+                                                            ? 'Por defecto: ' . self::DEFAULT_PASSWORD . '.'
                                                             : 'Dejar vacío para mantener la contraseña actual.')
                                                         ->validationMessages([
                                                             'same' => 'Las contraseñas no coinciden.',

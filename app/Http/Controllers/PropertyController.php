@@ -246,7 +246,43 @@ class PropertyController extends Controller
         //Forma de mostrar el layaout
         $layout = $request->input('layout', 'grid-three');
 
-        return view('front.inmuebles', compact('properties', 'tipos_inm', 'ciudades', 'layout'));
+        $suggestedProperties = $properties->isEmpty()
+            ? $this->suggestedNewestProperties()
+            : collect();
+
+        return view('front.inmuebles', compact('properties', 'tipos_inm', 'ciudades', 'layout', 'suggestedProperties'));
+    }
+
+    /**
+     * Tres inmuebles al azar del pool de los más recientes (rotan en cada visita).
+     */
+    private function suggestedNewestProperties(int $poolSize = 30, int $limit = 3)
+    {
+        $poolIds = Property::query()
+            ->where('estado', 0)
+            ->conDatosCompletos()
+            ->orderByDesc('fecha_captacion')
+            ->orderByDesc('id')
+            ->limit($poolSize)
+            ->pluck('id');
+
+        if ($poolIds->isEmpty()) {
+            return collect();
+        }
+
+        return Property::query()
+            ->leftJoin('usuarios', 'inmuebles.asesor', '=', 'usuarios.id')
+            ->whereIn('inmuebles.id', $poolIds)
+            ->select(
+                'inmuebles.*',
+                'usuarios.nombres as asesor_nombres',
+                'usuarios.apellidos as asesor_apellidos',
+                'usuarios.telefonos as asesor_telefonos'
+            )
+            ->with(['fotos', 'ciudadRelacion', 'tipo_inmueble', 'barrio'])
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
     }
 
     public function show($inmueble)

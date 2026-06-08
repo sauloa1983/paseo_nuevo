@@ -37,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
             fn (): string => view('filament.custom-styles')->render()
         );
 
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE,
+            fn (): string => view('filament.partials.login-loading')->render()
+        );
+
         /*FilamentAsset::register([
             Js::make('filament-watermark', resource_path('js/filament-watermark.js')),
         ]);*/
