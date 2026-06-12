@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'fotos_base_url' => env('FOTOS_BASE_URL'),
+
+    'panel_domain' => env('FILAMENT_DOMAIN'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

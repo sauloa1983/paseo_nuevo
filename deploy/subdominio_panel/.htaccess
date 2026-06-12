@@ -1,0 +1,22 @@
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteRule ^(acceso|entrar|livewire|pe-panel|gestion|crear-storage-link|limpiar-sistema|diag-storage|media)(/.*)?$ index.php [L,QSA]
+
+    # Las fotos viven en public_html/storage del sitio principal, no en este subdominio
+    RewriteRule ^storage/(.*)$ https://www.paseoespana.com/storage/$1 [L,R=302,NC]
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>

@@ -131,16 +131,37 @@ class PropertyController extends Controller
             if (!empty($bathrooms)) {
                 $query->where('no_banos', $bathrooms);
             }
-            // Busca por parqueadero (campo garajes = número de cupos)
+            // Filtro por tipo de parqueadero
             if ($request->filled('garaje')) {
-                if ($request->garaje === '0') {
-                    // Sin parqueadero
+                $garaje = match ($request->garaje) {
+                    '0', 'sin' => 'sin',
+                    '1', '2', '3', 'con' => 'con',
+                    'moto', 'comunal' => $request->garaje,
+                    default => null,
+                };
+
+                if ($garaje === 'sin') {
                     $query->where(function ($q) {
-                        $q->whereNull('garajes')->orWhere('garajes', 0);
+                        $q->where(function ($q2) {
+                            $q2->whereNull('garajes')->orWhere('garajes', 0);
+                        })
+                            ->where(function ($q2) {
+                                $q2->whereNull('parq_moto')->orWhere('parq_moto', 0);
+                            })
+                            ->where(function ($q2) {
+                                $q2->whereNull('parq_comunal')->orWhere('parq_comunal', 0);
+                            });
                     });
-                } else {
-                    // N cupos o más
-                    $query->where('garajes', '>=', (int) $request->garaje);
+                } elseif ($garaje === 'con') {
+                    $query->where('garajes', '>=', 1);
+                } elseif ($garaje === 'moto') {
+                    $query->where(function ($q) {
+                        $q->where('parq_moto', 1)->orWhere('parq_moto', '1');
+                    });
+                } elseif ($garaje === 'comunal') {
+                    $query->where(function ($q) {
+                        $q->where('parq_comunal', 1)->orWhere('parq_comunal', '1');
+                    });
                 }
             }
             // Buscar por área mínima y máxima

@@ -6,8 +6,11 @@
 @include('partials.banner-hero', [
     'headingId' => 'about-hero-heading',
     'label' => 'Somos Paseo España',
-    'heading' => 'Más de <span class="pe-services-accent">30 años</span> construyendo <span class="pe-services-accent">confianza</span> en el mercado inmobiliario de Santander',
-    'text' => 'Trabajamos cada día para <strong>proteger</strong> y potenciar el patrimonio de nuestros clientes, administrando sus inmuebles con responsabilidad, transparencia y respaldo legal.',
+    //'heading' => 'Más de <span class="pe-services-accent">30 años</span> construyendo <span class="pe-services-accent">confianza</span> en el mercado inmobiliario de Santander',
+    'heading' => '<span class="pe-services-accent">30 AÑOS</span> CONSTRUYENDO <span class="pe-services-accent">CONFIANZA</span> EN EL SECTOR INMOBILIARIO',
+    //'text' => 'Trabajamos cada día para <strong>proteger</strong> y potenciar el patrimonio de nuestros clientes, administrando sus inmuebles con responsabilidad, transparencia y respaldo legal.',
+    'text' => 'Paseo España, una empresa inspirada por la necesidad de apoyar a pequeños y grandes inversionistas en su propósito de hacer de la finca raíz un camino hacia la valorización y la rentabilidad.
+Nuestra convicción ha sido siempre que, actuando con honestidad, responsabilidad y cumplimiento , generaríamos la confianza y el respaldo de quienes han decidido caminar a nuestro lado: empleados, clientes, amigos y aliados.',
     'image' => 'images/nosotros.jpg',
     'imageAlt' => 'Asesor inmobiliario con llaves y maqueta de vivienda',
     'breadcrumbLabel' => '',

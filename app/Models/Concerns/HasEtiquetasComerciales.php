@@ -11,7 +11,7 @@ trait HasEtiquetasComerciales
         'OPORTUNIDAD' => 'Oportunidad',
         'NEGOCIABLE' => 'Negociable',
         'BAJO_DE_PRECIO' => 'Bajo de Precio',
-        'ESTRENA' => 'Estrena',
+        'ESTRENAR' => 'Estrenar',
     ];
 
     public function badgeStatusCssClass(): ?string
@@ -20,7 +20,7 @@ trait HasEtiquetasComerciales
             'OPORTUNIDAD' => 'pe-property-card__badge--oportunidad',
             'NEGOCIABLE' => 'pe-property-card__badge--negociable',
             'BAJO_DE_PRECIO' => 'pe-property-card__badge--bajo-precio',
-            'ESTRENA' => 'pe-property-card__badge--estrena',
+            'ESTRENAR' => 'pe-property-card__badge--estrenar',
             default => null,
         };
     }

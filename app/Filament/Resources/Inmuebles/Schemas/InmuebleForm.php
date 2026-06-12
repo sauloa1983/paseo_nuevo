@@ -25,6 +25,7 @@ use Filament\Support\RawJs;
 use App\Services\ImageWatermarkService;
 use Filament\Forms\Components\FileUpload;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class InmuebleForm
 {
@@ -43,18 +44,108 @@ class InmuebleForm
         }
 
         $path = str_replace('\\', '/', trim($state));
+
+        if (str_contains($path, '://')) {
+            $path = (string) (parse_url($path, PHP_URL_PATH) ?? $path);
+        }
+
+        $path = ltrim(str_replace(['storage/', 'public/'], '', $path), '/');
         $path = ltrim(str_replace('fotos/', '', $path), '/');
+        $path = basename($path);
 
         return filled($path) ? 'fotos/' . $path : null;
     }
 
+    private static function publicStorageAbsolutePath(string $normalizedPath): string
+    {
+        return public_storage_file_path($normalizedPath);
+    }
+
     /**
-     * URL relativa al mismo origen del panel (evita que FilePond falle si APP_URL
-     * no coincide con el host del navegador, p. ej. localhost vs 127.0.0.1).
+     * Resuelve una foto en public_html/storage/fotos.
+     * Si solo existe en rutas legacy del servidor, la copia allí.
+     */
+    private static function resolveFotoForPublicDisk(?string $normalizedPath, bool $migrate = true): ?string
+    {
+        if (blank($normalizedPath)) {
+            return null;
+        }
+
+        if (is_file(self::publicStorageAbsolutePath($normalizedPath))) {
+            return $normalizedPath;
+        }
+
+        $disk = Storage::disk('public');
+
+        if ($disk->exists($normalizedPath)) {
+            return $normalizedPath;
+        }
+
+        $filename = ltrim(str_replace('fotos/', '', $normalizedPath), '/');
+
+        $legacySources = [
+            storage_path('app/public/' . $normalizedPath),
+            storage_path('app/public/fotos/' . $filename),
+            public_path('fotos/' . $filename),
+        ];
+
+        foreach ($legacySources as $absolutePath) {
+            if (! is_file($absolutePath)) {
+                continue;
+            }
+
+            if ($migrate) {
+                $disk->put($normalizedPath, (string) file_get_contents($absolutePath));
+            }
+
+            return $normalizedPath;
+        }
+
+        $publicFotosDir = public_storage_root() . DIRECTORY_SEPARATOR . 'fotos';
+
+        if (is_dir($publicFotosDir)) {
+            foreach (scandir($publicFotosDir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+
+                if (strcasecmp($entry, $filename) === 0) {
+                    return 'fotos/' . $entry;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function fotoExistsOnPublicDisk(string $normalizedPath): bool
+    {
+        if (public_storage_file_exists($normalizedPath)) {
+            return true;
+        }
+
+        return Storage::disk('public')->exists($normalizedPath);
+    }
+
+    private static function fotoSizeOnPublicDisk(string $normalizedPath): int
+    {
+        $absolute = self::publicStorageAbsolutePath($normalizedPath);
+
+        if (is_file($absolute)) {
+            return (int) filesize($absolute);
+        }
+
+        $disk = Storage::disk('public');
+
+        return $disk->exists($normalizedPath) ? (int) $disk->size($normalizedPath) : 0;
+    }
+
+    /**
+     * URL pública en el sitio principal (public_html/storage), no en el subdominio del panel.
      */
     private static function fotoPublicUrl(string $diskPath): string
     {
-        return '/storage/' . ltrim(str_replace('\\', '/', $diskPath), '/');
+        return admin_storage_url($diskPath) ?? '';
     }
 
     private static function fotoMimeType(string $diskPath): string
@@ -75,10 +166,36 @@ class InmuebleForm
         return $inmueble->fotoInmueble()
             ->orderBy('posicion')
             ->get()
-            ->map(fn (FotoInmueble $foto): ?string => self::normalizeFotoDiskPath($foto->foto))
+            ->map(function (FotoInmueble $foto): ?string {
+                $raw = $foto->getAttributes()['foto'] ?? null;
+
+                return self::normalizeFotoDiskPath($raw ?? $foto->foto);
+            })
             ->filter()
             ->values()
             ->all();
+    }
+
+    /**
+     * Estado UUID => ruta en disco para FileUpload (compat. con EditInmueble).
+     *
+     * @return array<string, string>
+     */
+    public static function buildGaleriaFileUploadState(Inmueble $inmueble): array
+    {
+        $files = [];
+
+        foreach (self::galeriaPathsFromRecord($inmueble) as $path) {
+            $resolved = self::resolveFotoForPublicDisk($path);
+
+            if (blank($resolved) || ! self::fotoExistsOnPublicDisk($resolved)) {
+                continue;
+            }
+
+            $files[(string) Str::uuid()] = $resolved;
+        }
+
+        return $files;
     }
 
     /**
@@ -124,6 +241,53 @@ class InmuebleForm
         }
     }
 
+    private static function applyNonNegativeConstraints(TextInput $field): TextInput
+    {
+        return $field
+            ->minValue(0)
+            ->validationMessages([
+                'min' => 'Este campo no puede tener valores negativos.',
+            ])
+            ->extraInputAttributes(['min' => '0'], merge: true)
+            ->rule(function (): \Closure {
+                return function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    $normalized = is_numeric($value)
+                        ? (float) $value
+                        : (float) str_replace('.', '', (string) $value);
+
+                    if ($normalized < 0) {
+                        $fail('Este campo no puede tener valores negativos.');
+                    }
+                };
+            });
+    }
+
+    private static function fieldToggle(string $name): Toggle
+    {
+        return Toggle::make($name)->inline(false);
+    }
+
+    private static function applyNonNegativeTextConstraints(TextInput $field): TextInput
+    {
+        return $field->rule(function (): \Closure {
+            return function (string $attribute, mixed $value, \Closure $fail): void {
+                if (blank($value)) {
+                    return;
+                }
+
+                $value = trim((string) $value);
+
+                if (str_starts_with($value, '-') || (is_numeric($value) && (float) $value < 0)) {
+                    $fail('Este campo no puede tener valores negativos.');
+                }
+            };
+        });
+    }
+
     /**
      * @return list<string>
      */
@@ -164,10 +328,10 @@ class InmuebleForm
                                                 'lg' => 4,       // ≥1024px
                                                 ])
                                             ->schema([
-                                                Toggle::make('arriendo')->label('Arriendo'),
-                                                Toggle::make('venta')->label('Venta'),
-                                                Toggle::make('destacado')->label('Destacado'),
-                                                Toggle::make('iva')->label('IVA'),
+                                                self::fieldToggle('arriendo')->label('Arriendo'),
+                                                self::fieldToggle('venta')->label('Venta'),
+                                                self::fieldToggle('destacado')->label('Destacado'),
+                                                self::fieldToggle('iva')->label('IVA'),
                                             ])
                                             ->columnSpanFull(),
                                         Select::make('badge_status')
@@ -196,32 +360,49 @@ class InmuebleForm
                                                 'required' => 'El tipo de inmueble es obligatorio.',  // ← Mensaje custom
                                             ])
                                             ->columnSpan(1),
-                                        TextInput::make('valor_arriendo')
-                                            ->label('Valor arriendo')
-                                            ->prefix('$')
-                                            ->mask(RawJs::make('$money($input, \',\', \'.\')'))
-                                            ->stripCharacters('.')
-                                            ->numeric()
-                                            ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        self::applyNonNegativeConstraints(
+                                            TextInput::make('valor_arriendo')
+                                                ->label('Valor arriendo')
+                                                ->prefix('$')
+                                                ->mask(RawJs::make('$money($input, \',\', \'.\')'))
+                                                ->stripCharacters('.')
+                                                ->numeric()
+                                                ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        ),
 
-                                        TextInput::make('valor_venta')
-                                            ->label('Valor venta')
-                                            ->prefix('$')
-                                            ->mask(RawJs::make('$money($input, \',\', \'.\')'))
-                                            ->stripCharacters('.')
-                                            ->numeric()
-                                            ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        self::applyNonNegativeConstraints(
+                                            TextInput::make('valor_venta')
+                                                ->label('Valor venta')
+                                                ->prefix('$')
+                                                ->mask(RawJs::make('$money($input, \',\', \'.\')'))
+                                                ->stripCharacters('.')
+                                                ->numeric()
+                                                ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        ),
 
-                                        TextInput::make('administracion')
-                                            ->label('Valor administración')
-                                            ->prefix('$')
-                                            ->mask(RawJs::make('$money($input, \',\', \'.\')'))
-                                            ->stripCharacters('.')
-                                            ->numeric()
-                                            ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        self::applyNonNegativeConstraints(
+                                            TextInput::make('administracion')
+                                                ->label('Valor administración')
+                                                ->prefix('$')
+                                                ->mask(RawJs::make('$money($input, \',\', \'.\')'))
+                                                ->stripCharacters('.')
+                                                ->numeric()
+                                                ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : null),
+                                        ),
+                                        self::applyNonNegativeConstraints(
+                                            TextInput::make('direccion')
+                                                ->label('Dirección')
+                                                //->columnSpanFull(),
+                                        ),
                                         Select::make('ciudad')
                                             ->label('Ciudad')
-                                            ->relationship('ciudadRelacion', 'nombre')
+                                            ->relationship(
+                                                name: 'ciudadRelacion',
+                                                titleAttribute: 'nombre',
+                                                modifyQueryUsing: fn ($query) => $query
+                                                    ->visibleInBuscador()
+                                                    ->orderBy('nombre'),
+                                            )
                                             ->preload()
                                             ->live()
                                             ->afterStateUpdated(fn (Set $set) => $set('barrio_fk', null))
@@ -245,6 +426,11 @@ class InmuebleForm
                                             ->validationMessages([
                                                 'required' => 'El barrio es obligatorio.',  // ← Mensaje custom
                                             ]),
+                                        self::applyNonNegativeConstraints(
+                                            TextInput::make('area_construida')
+                                                ->label('Área construida (m²)')
+                                                ->numeric(),
+                                        ),
                                         Select::make('estrato')
                                             ->label('Estrato')
                                             ->options([
@@ -259,38 +445,12 @@ class InmuebleForm
                                             ->formatStateUsing(fn ($state) => filled($state) ? (int) $state : null)
                                             ->native(false)
                                             ->placeholder('Seleccione estrato'),
-
-                                        TextInput::make('area_construida')
-                                            ->label('Área construida (m²)')
-                                            ->numeric(),
-                                        TextInput::make('no_alcobas')
-                                            ->label('Número de alcobas')
-                                            ->numeric(),
-                                        TextInput::make('no_banos')
-                                            ->label('Número de baños')
-                                            ->numeric(),
-                                        TextInput::make('no_closets')
-                                            ->label('Número de closets'),
-                                        TextInput::make('garajes')
-                                            ->label('Número de parqueaderos')
-                                            ->numeric(),
-                                        Select::make('tipo_cocina')
-                                            ->label('Tipo Cocina')
-                                            ->options([
-                                                'No tiene' => 'No Tiene',
-                                                'Integral' => 'Integral',
-                                                'Semintegral' => 'Semintegral',
-                                                'Tradicional' => 'Tradicional',
-                                            ])
-                                            ->placeholder('Seleccione el tipo de cocina')
-                                            ->native(false),
                                         Select::make('ubicacion')
                                             ->label('Ubicación')
                                             ->options([
                                                 '0' => 'Interior',
                                                 '1' => 'Exterior',
-                                            ])
-                                            ->placeholder('Ubicación'),
+                                            ]),
                                         Select::make('acceso')
                                             ->label('Acceso')
                                             ->options([
@@ -299,17 +459,15 @@ class InmuebleForm
                                             ])
                                             ->placeholder('Seleccione el tipo de acceso')
                                             ->native(false),
-                                        TextInput::make('unidad')
-                                            ->label('No. Piso'),
-                                        TextInput::make('no_bodega')
-                                            ->label('Número de bodegas')
-                                            ->numeric(),
-                                        TextInput::make('no_oficina')
-                                            ->label('Número de oficinas')
-                                            ->numeric(),
-                                        TextInput::make('no_salon')
-                                            ->label('Número de salones')
-                                            ->numeric(),
+                                        self::applyNonNegativeTextConstraints(
+                                            TextInput::make('unidad')
+                                                ->label('No. Piso'),
+                                        ),
+
+                                        self::fieldToggle('conjunto_cerrado')->label('Conjunto Cerrado'),
+
+                                        self::fieldToggle('edificio')->label('Edificio'),
+
                                         Select::make('asesor')
                                             ->label('Asesor')
                                             ->options(function ($livewire) {
@@ -348,7 +506,7 @@ class InmuebleForm
                                 // DERECHA: Opciones rápidas
                                 Grid::make(1) // Stack vertical toggles
                                     ->schema([
-                                        Toggle::make('estado')
+                                        self::fieldToggle('estado')
                                             ->live()
                                             ->label(fn ($state) => $state ? 'Activo' : 'Inactivo')
                                             ->onColor('success')
@@ -375,75 +533,106 @@ class InmuebleForm
                                         'xl' => 4,       // ≥1280px
                                     ])
                                         ->schema([
-                                            Toggle::make('parq_moto')->label('Parqueadero para motos'),
-                                            Toggle::make('parq_comunal')->label('Parqueadero comunal'),
-                                            Toggle::make('sala_comedor')->label('Sala Comedor'),
-
-                                            Toggle::make('balcon')->label('Balcón'),
-
-                                            Toggle::make('lobby')->label('Lobby'),
-
-                                            Toggle::make('piscina')->label('Piscina'),
-
-                                            Toggle::make('alcoba_servicio')->label('Alcoba de Servicio'),
-
-                                            Toggle::make('zona_ropas')->label('Zona de Ropas'),
-
-                                            Toggle::make('ascensor')->label('Ascensor'),
-
-                                            Toggle::make('sauna')->label('Sauna'),
-
-                                            Toggle::make('hall')->label('Hall TV'),
-
-                                            Toggle::make('terraza')->label('Terraza'),
-
-                                            Toggle::make('vigilancia')->label('Celaduría'),
-
-                                            Toggle::make('turco')->label('Turco'),
-
-                                            Toggle::make('estudio')->label('Estudio'),
-
-                                            Toggle::make('salon_n')->label('Salón'),
-
-                                            Toggle::make('juegos')->label('Juegos Infantiles'),
-
-                                            Toggle::make('cancha')->label('Cancha'),
-
-                                            Toggle::make('patio')->label('Patio'),
-
-                                            Toggle::make('bodega')->label('Bodega'),
-
-                                            Toggle::make('salon_social')->label('Salón Social'),
-
-                                            Toggle::make('bbq')->label('BBQ'),
-
-                                            Toggle::make('mirador')->label('Mirador'),
-
-                                            Toggle::make('oficina')->label('Oficina'),
-
-                                            Toggle::make('gimnasio')->label('Gimnasio'),
-
-                                            Toggle::make('conjunto_cerrado')->label('Conjunto Cerrado'),
-
-                                            Toggle::make('edificio')->label('Edificio'),
-
-                                            Toggle::make('calentador')->label('Calentador'),
-
-                                            Toggle::make('aire_acondicionado')->label('Aire Acondicionado'),
-                                        ]),
-
-                                    Placeholder::make('detalles_separator')
-                                        ->hiddenLabel()
-                                        ->content(new HtmlString('<div class="pe-inmueble-detalles-divider" role="presentation"></div>'))
-                                        ->columnSpanFull()
-                                        ->dehydrated(false),
-
-                                    Textarea::make('observaciones')
-                                        ->label('Observaciones')
-                                        ->rows(4)
-                                        ->columnSpanFull()
-                                        ->placeholder('Notas internas o detalles adicionales del inmueble…'),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_alcobas')
+                                                    ->label('Número de alcobas')
+                                                    ->numeric(),
+                                            ),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_closets')
+                                                    ->label('Número de closets')
+                                                    ->numeric(),
+                                            ),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_banos')
+                                                    ->label('Número de baños')
+                                                    ->numeric(),
+                                            ),
+                                            self::fieldToggle('sala_comedor')->label('Sala Comedor'),
+                                            self::fieldToggle('alcoba_servicio')->label('Alcoba de Servicio'),
+                                            Select::make('tipo_cocina')
+                                                ->label('Tipo Cocina')
+                                                ->options([
+                                                    'No tiene' => 'No Tiene',
+                                                    'Integral' => 'Integral',
+                                                    'Semintegral' => 'Semintegral',
+                                                    'Tradicional' => 'Tradicional',
+                                                ])
+                                                ->placeholder('Seleccione el tipo de cocina')
+                                                ->native(false),
+                                            self::fieldToggle('hall')->label('Hall TV'),
+                                            self::fieldToggle('estudio')->label('Estudio'),
+                                            self::fieldToggle('mirador')->label('Mirador'),
+                                            self::fieldToggle('balcon')->label('Balcón'),
+                                            self::fieldToggle('patio')->label('Patio'),
+                                            self::fieldToggle('zona_ropas')->label('Zona de Ropa'),
+                                            self::fieldToggle('terraza')->label('Terraza'),
+                                            self::fieldToggle('salon_n')->label('Salón'),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_salon')
+                                                    ->label('Número de salones')
+                                                    ->numeric(),
+                                            ),
+                                            self::fieldToggle('bodega')->label('Bodega'),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_bodega')
+                                                    ->label('Número de bodegas')
+                                                    ->numeric(),
+                                            ),
+                                            self::fieldToggle('oficina')->label('Oficina'),
+                                            self::applyNonNegativeConstraints(
+                                                TextInput::make('no_oficina')
+                                                    ->label('Número de oficinas')
+                                                    ->numeric(),
+                                            ),
+                                            self::fieldToggle('calentador')->label('Calentador'),
+                                            self::fieldToggle('aire_acondicionado')->label('Aire Acondicionado'),
+                                        ])
                                 ])
+                        ])
+                        ->columnSpanFull(),
+
+
+                    Tab::make('Detalles en la PH')
+                        ->schema([
+                            Grid::make([
+                                'default' => 1,  // Móviles pequeños
+                                'sm' => 2,       // ≥640px
+                                'md' => 3,       // ≥768px
+                                'lg' => 3,       // ≥1024px
+                                'xl' => 4,       // ≥1280px
+                                ])
+                                ->schema([
+                                    self::applyNonNegativeConstraints(
+                                        TextInput::make('garajes')
+                                            ->label('Número de parqueaderos')
+                                            ->numeric(),
+                                    ),
+                                    self::fieldToggle('parq_moto')->label('Parqueadero para motos'),
+                                    self::fieldToggle('parq_comunal')->label('Parqueadero comunal'),
+                                    self::fieldToggle('lobby')->label('Lobby'),
+                                    self::fieldToggle('ascensor')->label('Ascensor'),
+                                    self::fieldToggle('vigilancia')->label('Celaduría'),
+                                    self::fieldToggle('juegos')->label('Juegos Infantiles'),
+                                    self::fieldToggle('salon_social')->label('Salón Social'),
+                                    self::fieldToggle('gimnasio')->label('Gimnasio'),
+                                    self::fieldToggle('piscina')->label('Piscina'),
+                                    self::fieldToggle('sauna')->label('Sauna'),
+                                    self::fieldToggle('turco')->label('Turco'),
+                                    self::fieldToggle('cancha')->label('Cancha'),
+                                    self::fieldToggle('bbq')->label('BBQ'),
+                                ]),
+                                Placeholder::make('detalles_separator')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString('<div class="pe-inmueble-detalles-divider" role="presentation"></div>'))
+                                    ->columnSpanFull()
+                                    ->dehydrated(false),
+
+                                Textarea::make('observaciones')
+                                    ->label('Observaciones')
+                                    ->rows(4)
+                                    ->columnSpanFull()
+                                    ->placeholder('Notas internas o detalles adicionales del inmueble…'),
                         ])
                         ->columnSpanFull(),
 
@@ -481,16 +670,23 @@ class InmuebleForm
                                     string $file,
                                     string | array | null $storedFileNames,
                                 ): ?array {
-                                    $path = self::normalizeFotoDiskPath($file) ?? $file;
-                                    $storage = $component->getDisk();
+                                    $path = self::resolveFotoForPublicDisk(
+                                        self::normalizeFotoDiskPath($file) ?? $file,
+                                    );
 
-                                    if (! $storage->exists($path)) {
+                                    if (blank($path)) {
+                                        return null;
+                                    }
+
+                                    if (! self::fotoExistsOnPublicDisk($path)) {
                                         return null;
                                     }
 
                                     return [
-                                        'name' => 'Foto',
-                                        'size' => $storage->size($path),
+                                        'name' => (is_array($storedFileNames)
+                                            ? ($storedFileNames[$file] ?? null)
+                                            : $storedFileNames) ?? basename($path),
+                                        'size' => self::fotoSizeOnPublicDisk($path),
                                         'type' => self::fotoMimeType($path),
                                         'url' => self::fotoPublicUrl($path),
                                     ];
@@ -501,17 +697,23 @@ class InmuebleForm
                                     ),
                                 )
                                 ->afterStateHydrated(function (FileUpload $component, string | array | null $state): void {
-                                    $disk = $component->getDisk();
                                     $files = [];
+                                    $pending = Arr::wrap($state);
 
-                                    foreach (Arr::wrap($state) as $key => $file) {
+                                    if ($pending === [] || $pending === [null]) {
+                                        $pending = self::existingGaleriaPathsFromLivewire($component->getLivewire());
+                                    }
+
+                                    foreach ($pending as $key => $file) {
                                         if (! is_string($file) || blank($file)) {
                                             continue;
                                         }
 
-                                        $path = self::normalizeFotoDiskPath($file);
+                                        $path = self::resolveFotoForPublicDisk(
+                                            self::normalizeFotoDiskPath($file),
+                                        );
 
-                                        if (blank($path) || ! $disk->exists($path)) {
+                                        if (blank($path) || ! self::fotoExistsOnPublicDisk($path)) {
                                             continue;
                                         }
 

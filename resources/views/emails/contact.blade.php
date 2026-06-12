@@ -7,6 +7,7 @@
 <body>
     <h2>Nuevo contacto desde la página</h2>
 
+    <p><strong>Oficina:</strong> {{ $office }}</p>
     <p><strong>Nombre:</strong> {{ $name }}</p>
     <p><strong>Email:</strong> {{ $email }}</p>
     <p><strong>Asunto:</strong> {{ $subject }}</p>

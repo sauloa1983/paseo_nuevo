@@ -1,0 +1,11 @@
+# Solo usar si el Document Root apunta a la raíz del proyecto (no a public_html).
+# Si tu hosting usa public_html, NO subas este archivo allí: usa deploy/public_html/.htaccess
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^$ public/ [L]
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

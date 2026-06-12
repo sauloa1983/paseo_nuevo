@@ -33,7 +33,7 @@
                 <ul class="social-icons">
                     <li><a class="facebook" href="https://m.facebook.com/people/Paseo-Espa%C3%B1a-Inmobiliaria/100063452446558/" target="_blank" rel="noopener noreferrer"><i class="icon-facebook"></i></a></li>
                     <li><a class="instagram" href="https://www.instagram.com/paseoespana/" target="_blank" rel="noopener noreferrer"><i class="icon-instagram"></i></a></li>
-                    <li><a class="youtube" href="https://www.youtube.com/@paseoespana" target="_blank" rel="noopener noreferrer"><i class="icon-youtube"></i></a></li>
+                    <li><a class="youtube" href="https://www.youtube.com/@PaseoEspa%C3%B1aSantander" target="_blank" rel="noopener noreferrer"><i class="icon-youtube"></i></a></li>
                 </ul>
             </div>
         </div>

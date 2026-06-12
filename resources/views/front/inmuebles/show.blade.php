@@ -2,8 +2,13 @@
 @section('content')
 
 @php
-    $fotos = $property->fotos->pluck('foto')->toArray();
-    $fotosCount = is_array($fotos) ? count($fotos) : 0;
+    $fotoUrls = $property->fotos
+        ->pluck('foto')
+        ->map(fn ($foto) => foto_inmueble_url($foto))
+        ->filter()
+        ->values()
+        ->toArray();
+    $fotosCount = count($fotoUrls);
 @endphp
 
 <div class="container pe-property-layout">
@@ -33,9 +38,9 @@
             <div class="pe-gallery-block margin-bottom-35">
                 <div class="pe-gallery pe-gallery--in-column">
                     <div id="pe-property-slider" class="property-slider default">
-                        @if(!empty($fotos))
-                            @foreach($fotos as $foto)
-                                <a href="https://www.paseoespanainmobiliaria.com/{{ $foto }}" data-background-image="https://www.paseoespanainmobiliaria.com/{{ $foto }}" class="item mfp-gallery" role="button" aria-label="Ampliar foto"></a>
+                        @if(!empty($fotoUrls))
+                            @foreach($fotoUrls as $fotoUrl)
+                                <a href="{{ $fotoUrl }}" data-background-image="{{ $fotoUrl }}" class="item mfp-gallery" role="button" aria-label="Ampliar foto"></a>
                             @endforeach
                         @else
                             <div>
@@ -63,10 +68,10 @@
                 </div>
 
                 <div id="pe-property-thumbs" class="property-slider-nav pe-gallery-thumbs">
-                    @if(!empty($fotos))
-                        @foreach($fotos as $foto)
+                    @if(!empty($fotoUrls))
+                        @foreach($fotoUrls as $fotoUrl)
                             <div class="item">
-                                <img src="https://www.paseoespanainmobiliaria.com/{{ $foto }}" alt="">
+                                <img src="{{ $fotoUrl }}" alt="">
                             </div>
                         @endforeach
                     @else
@@ -108,6 +113,8 @@
                     @php
                         $parqMoto = (string) ($property->parq_moto ?? '') === '1';
                         $parqComunal = (string) ($property->parq_comunal ?? '') === '1';
+                        $garajes = (int) ($property->garajes ?? 0);
+                        $showParqueadero = $parqMoto || $parqComunal || $garajes > 0;
 
                         if ($parqMoto) {
                             $parqIcono = 'fa fa-motorcycle';
@@ -119,19 +126,21 @@
                             $parqEtiqueta = 'comunal';
                         } else {
                             $parqIcono = 'fa fa-car';
-                            $parqValor = (string) (int) ($property->garajes ?? 0);
+                            $parqValor = (string) $garajes;
                             $parqEtiqueta = 'Parqueadero';
                         }
                     @endphp
-                    <div class="pe-quick-stats__item">
-                        <div class="pe-quick-stats__icon" aria-hidden="true"><i class="{{ $parqIcono }}"></i></div>
-                        <div class="pe-quick-stats__text">
-                            <div class="pe-quick-stats__value">{{ $parqValor }}</div>
-                            @if($parqEtiqueta)
-                                <div class="pe-quick-stats__label">{{ $parqEtiqueta }}</div>
-                            @endif
+                    @if($showParqueadero)
+                        <div class="pe-quick-stats__item">
+                            <div class="pe-quick-stats__icon" aria-hidden="true"><i class="{{ $parqIcono }}"></i></div>
+                            <div class="pe-quick-stats__text">
+                                <div class="pe-quick-stats__value">{{ $parqValor }}</div>
+                                @if($parqEtiqueta)
+                                    <div class="pe-quick-stats__label">{{ $parqEtiqueta }}</div>
+                                @endif
+                            </div>
                         </div>
-                    </div>
+                    @endif
 				</div>
 
                 {{-- Solo muestra la administración en la parte inferior si NO es un arriendo (es decir, es solo venta) --}}

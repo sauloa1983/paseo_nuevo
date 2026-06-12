@@ -35,7 +35,7 @@
                                 Encuentra el hogar de tus sueños o el espacio ideal para tu negocio.
                             </h1>
                             <p class="hero-value-proposition__subtitle text-lg">
-                                EFICACIA EN EL SERVICIO Y SEGURIDAD EN LA INVERSION INMOBILIARIA
+                                EFICACIA EN EL SERVICIO Y SEGURIDAD EN LA INVERSIÓN INMOBILIARIA
                             </p>
                         </div>
 
@@ -141,10 +141,10 @@
                                                 <div class="col-md-6">
                                                     <select name="garaje" data-placeholder="Parqueadero" class="custom-select">
                                                         <option value="">Parqueadero (Cualquiera)</option>
-                                                        <option value="0" {{ request('garaje') === '0' ? 'selected' : '' }}>Sin parqueadero</option>
-                                                        <option value="1" {{ request('garaje') == '1' ? 'selected' : '' }}>1 o más</option>
-                                                        <option value="2" {{ request('garaje') == '2' ? 'selected' : '' }}>2 o más</option>
-                                                        <option value="3" {{ request('garaje') == '3' ? 'selected' : '' }}>3 o más</option>
+                                                        <option value="sin" {{ in_array(request('garaje'), ['sin', '0'], true) ? 'selected' : '' }}>Sin parqueadero</option>
+                                                        <option value="con" {{ in_array(request('garaje'), ['con', '1', '2', '3'], true) ? 'selected' : '' }}>Con parqueadero</option>
+                                                        <option value="moto" {{ request('garaje') === 'moto' ? 'selected' : '' }}>Parqueadero Moto</option>
+                                                        <option value="comunal" {{ request('garaje') === 'comunal' ? 'selected' : '' }}>Parqueadero Comunal</option>
                                                     </select>
                                                 </div>
 

@@ -33,7 +33,10 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panelDomain = panel_domain();
+        $useSubdomain = filled($panelDomain);
+
+        $panel = $panel
             ->defaultThemeMode(ThemeMode::Light)
             ->darkMode(false) // sin toggle oscuro
             ->colors([
@@ -41,14 +44,22 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->default()
             ->id('admin')
-            ->path('admin')
-            ->login(\App\Filament\Pages\Auth\Login::class)
+            ->path($useSubdomain ? '' : 'pe-panel')
+            ->loginRouteSlug('acceso')
+            ->login(\App\Filament\Pages\Auth\Login::class);
+
+        if ($useSubdomain) {
+            $panel = $panel->domain($panelDomain);
+        }
+
+        return $panel
             ->authGuard('web')       // ✅ Usa guard web (tabla usuarios)
             ->authPasswordBroker('users')  // ✅ Usa provider users
             ->brandName('Paseo España Inmobiliaria')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('4rem')
             ->favicon(asset('favicon.ico'))
+            ->globalSearch(false)
             ->sidebarCollapsibleOnDesktop()
             ->collapsedSidebarWidth('5.75rem')
             ->maxContentWidth(Width::Full) // Muestra el contenido al 100% del ancho

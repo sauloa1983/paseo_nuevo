@@ -13,29 +13,30 @@
         ['label' => 'Centro de Ayuda', 'route' => 'contact'],
     ];
 
-    $footerPhone = '(607) 697 8295';
-    $footerPhoneHref = 'tel:+576076978295';
-    $footerEmail = 'comercial@paseoespana.com';
-    $footerAddress = 'Cra 26 No. 34-53, Bucaramanga';
 @endphp
 
 <div id="footer">
-	<div class="container">
-		<div class="row">
-			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
+	<div class="container pe-footer-container">
+		<div class="row pe-footer-main">
+			<div class="col-lg-4 col-md-6 col-sm-12 pe-footer-col pe-footer-col--brand">
 				<img class="footer-logo" src="{{ asset('images/logo.png') }}" alt="Paseo España Inmobiliaria">
-				<div class="text-widget pe-footer-brand-text">
-					<span class="address">Más de 30 años conectando personas con propiedades en Bucaramanga y el área metropolitana.</span>
+				<div class="pe-footer-careers">
+					<h4 class="pe-footer-careers__title">Trabaje con Nosotros</h4>
+					<p class="pe-footer-careers__text">
+						Buscamos personas comprometidas, responsables y con vocación de servicio. Si desea hacer parte de nuestro equipo, envíe su hoja de vida a:
+					</p>
+					<a class="pe-footer-careers__email" href="mailto:gerencia@paseoespana.com">gerencia@paseoespana.com</a>
+					<p class="pe-footer-careers__tagline">¡Esperamos conocer su talento!</p>
 				</div>
 				<ul class="social-icons pe-social-footer">
 					<li><a class="facebook" href="https://m.facebook.com/people/Paseo-Espa%C3%B1a-Inmobiliaria/100063452446558/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="icon-facebook"></i></a></li>
 					<li><a class="instagram" href="https://www.instagram.com/paseoespana/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="icon-instagram"></i></a></li>
-					<li><a class="youtube" href="https://www.youtube.com/@paseoespana" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="icon-youtube"></i></a></li>
-					<li><a class="linkedin" href="https://www.linkedin.com/company/paseo-espana-inmobiliaria" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="icon-linkedin"></i></a></li>
+					<li><a class="youtube" href="https://www.youtube.com/@PaseoEspa%C3%B1aSantander" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="icon-youtube"></i></a></li>
+					<!--<li><a class="linkedin" href="https://www.linkedin.com/company/paseo-espana-inmobiliaria" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="icon-linkedin"></i></a></li>-->
 				</ul>
 			</div>
 
-			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
+			<div class="col-lg-4 col-md-6 col-sm-12 pe-footer-col pe-footer-col--links">
 				<h4>Links de interés</h4>
 				<ul class="footer-links pe-footer-links-grid">
 					@foreach ($footerLinks as $link)
@@ -46,7 +47,7 @@
 				</ul>
 			</div>
 
-			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
+			<div class="col-lg-4 col-md-6 col-sm-12 pe-footer-col pe-footer-col--offices">
 				<h4>Nuestras oficinas</h4>
 				<ul class="pe-offices" role="list">
 					@foreach ($footerOffices as $office)
@@ -132,24 +133,6 @@
 					@endforeach
 				</ul>
 			</div>
-
-			<div class="col-lg-3 col-md-6 col-sm-12 pe-footer-col">
-				<h4>Contáctanos</h4>
-				<ul class="pe-footer-contact">
-					<li>
-						<i class="fa fa-phone" aria-hidden="true"></i>
-						<a href="{{ $footerPhoneHref }}">{{ $footerPhone }}</a>
-					</li>
-					<li>
-						<i class="fa fa-envelope-o" aria-hidden="true"></i>
-						<a href="mailto:{{ $footerEmail }}">{{ $footerEmail }}</a>
-					</li>
-					<li>
-						<i class="fa fa-map-marker" aria-hidden="true"></i>
-						<span>{{ $footerAddress }}</span>
-					</li>
-				</ul>
-			</div>
 		</div>
 
 		<div class="row">
@@ -161,6 +144,23 @@
 						<span aria-hidden="true">|</span>
 						<a href="{{ route('about') }}#policy-terms">Términos y condiciones</a>
 					</nav>
+					<div class="pe-footer-credits">
+						<span class="pe-footer-credits__label">Diseño y desarrollo</span>
+						<a
+							href="https://valdesoft.com.co"
+							class="pe-footer-credits__link"
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label="Valdesoft - Diseño y desarrollo"
+						>
+							<img
+								src="{{ asset('images/logo_h.svg') }}"
+								alt="Valdesoft"
+								class="pe-footer-credits__logo"
+								loading="lazy"
+							>
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>

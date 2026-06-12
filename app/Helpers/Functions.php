@@ -1,5 +1,212 @@
 <?php
 
+if (! function_exists('resolve_public_html_path')) {
+    /**
+     * Raíz web pública (public_html en hosting, public/ en local).
+     */
+    function resolve_public_html_path(): string
+    {
+        static $cached = null;
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $fromEnv = env('PUBLIC_HTML_PATH');
+
+        if (filled($fromEnv)) {
+            $resolved = realpath((string) $fromEnv);
+
+            if ($resolved !== false && is_dir($resolved)) {
+                $cached = $resolved;
+
+                return $cached;
+            }
+        }
+
+        foreach ([
+            base_path('../public_html'),
+            dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html',
+            base_path('public'),
+        ] as $candidate) {
+            $resolved = realpath($candidate);
+
+            if ($resolved === false || ! is_dir($resolved)) {
+                continue;
+            }
+
+            if (is_file($resolved . DIRECTORY_SEPARATOR . 'index.php')) {
+                $cached = $resolved;
+
+                return $cached;
+            }
+        }
+
+        $cached = realpath(base_path('public')) ?: base_path('public');
+
+        return $cached;
+    }
+}
+
+if (! function_exists('panel_domain')) {
+    /**
+     * Dominio del panel Filament (panel.paseoespana.com).
+     * Lee config y, si hace falta, .env (útil cuando config:cache está desactualizado).
+     */
+    function panel_domain(): ?string
+    {
+        static $cached = null;
+
+        if ($cached !== null) {
+            return $cached !== '' ? $cached : null;
+        }
+
+        $domain = config('app.panel_domain');
+
+        if (filled($domain)) {
+            $cached = (string) $domain;
+
+            return $cached;
+        }
+
+        $envFile = base_path('.env');
+
+        if (is_readable($envFile)) {
+            foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                $line = trim($line);
+
+                if ($line === '' || str_starts_with($line, '#')) {
+                    continue;
+                }
+
+                if (str_starts_with($line, 'FILAMENT_DOMAIN=')) {
+                    $value = trim(substr($line, 16));
+                    $value = trim($value, " \t\"'");
+
+                    if (filled($value)) {
+                        $cached = $value;
+
+                        return $value;
+                    }
+                }
+            }
+        }
+
+        $cached = '';
+
+        return null;
+    }
+}
+
+if (! function_exists('public_storage_root')) {
+    function public_storage_root(): string
+    {
+        return resolve_public_html_path() . DIRECTORY_SEPARATOR . 'storage';
+    }
+}
+
+if (! function_exists('public_storage_file_path')) {
+    function public_storage_file_path(string $diskRelativePath): string
+    {
+        return public_storage_root() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($diskRelativePath, '/'));
+    }
+}
+
+if (! function_exists('public_storage_file_exists')) {
+    function public_storage_file_exists(string $diskRelativePath): bool
+    {
+        if (blank($diskRelativePath)) {
+            return false;
+        }
+
+        return is_file(public_storage_file_path($diskRelativePath));
+    }
+}
+
+if (! function_exists('public_storage_url')) {
+    /**
+     * URL pública de un archivo en public_html/storage (fotos/, banners/, etc.).
+     * En producción con panel en subdominio, apunta al sitio principal (APP_URL / FOTOS_BASE_URL).
+     */
+    function public_storage_url(?string $diskRelativePath): ?string
+    {
+        if (blank($diskRelativePath)) {
+            return null;
+        }
+
+        $path = ltrim(str_replace('\\', '/', trim($diskRelativePath)), '/');
+
+        if (blank($path)) {
+            return null;
+        }
+
+        $relativePath = 'storage/' . $path;
+        $base = rtrim((string) (config('app.fotos_base_url') ?: config('app.url')), '/');
+
+        $segments = array_map(
+            static fn (string $segment): string => rawurlencode(rawurldecode($segment)),
+            explode('/', $relativePath),
+        );
+
+        return $base . '/' . implode('/', $segments);
+    }
+}
+
+if (! function_exists('admin_storage_url')) {
+    /**
+     * URL para previsualización en Filament (mismo origen que el panel).
+     * Si el subdominio del panel apunta a public_html (caso típico en cPanel),
+     * usa /storage/… relativo. Si no, usa la ruta /media/ del panel.
+     */
+    function admin_storage_url(?string $diskRelativePath): ?string
+    {
+        if (blank($diskRelativePath)) {
+            return null;
+        }
+
+        $path = ltrim(str_replace('\\', '/', trim($diskRelativePath)), '/');
+
+        if (blank($path)) {
+            return null;
+        }
+
+        $segments = array_map(
+            static fn (string $segment): string => rawurlencode(rawurldecode($segment)),
+            explode('/', $path),
+        );
+
+        $panelDomain = panel_domain();
+
+        if (filled($panelDomain) && request()->getHost() === $panelDomain) {
+            // panel.paseoespana.com → public_html (misma carpeta que www)
+            return '/storage/' . implode('/', $segments);
+        }
+
+        return public_storage_url($path);
+    }
+}
+
+if (! function_exists('foto_inmueble_url')) {
+    /**
+     * URL pública de una foto de inmueble (public_html/storage/fotos/…).
+     */
+    function foto_inmueble_url(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        $filename = ltrim(str_replace('\\', '/', trim($path)), '/');
+        $filename = ltrim(str_replace(['storage/fotos/', 'fotos/'], '', $filename), '/');
+
+        if (blank($filename)) {
+            return null;
+        }
+
+        return public_storage_url('fotos/' . $filename);
+    }
+}
+
 if (!function_exists('acceso')) {
     function acceso($valor)
     {

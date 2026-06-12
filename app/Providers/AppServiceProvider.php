@@ -18,9 +18,7 @@ class AppServiceProvider extends ServiceProvider
     {
         require_once app_path('Helpers/Functions.php');
 
-        $this->app->bind('path.public', function() {
-            return base_path('../public_html');
-        });
+        $this->app->bind('path.public', fn (): string => resolve_public_html_path());
     }
 
     /**
@@ -48,5 +46,8 @@ class AppServiceProvider extends ServiceProvider
 
         \App\Models\FotoInmueble::observe(\App\Observers\FotoInmuebleObserver::class);
 
+        config([
+            'filesystems.disks.public.root' => public_storage_root(),
+        ]);
     }
 }

@@ -60,7 +60,7 @@ class Banner extends Model
             return null;
         }
 
-        return asset('storage/banners/' . $normalized);
+        return public_storage_url('banners/' . $normalized);
     }
 
     /**

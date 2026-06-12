@@ -30,7 +30,7 @@ class BannerForm
 
     public static function imagePublicUrl(string $diskPath): string
     {
-        return Banner::storagePublicUrl($diskPath) ?? '';
+        return admin_storage_url($diskPath) ?? '';
     }
 
     private static function imageMimeType(string $diskPath): string

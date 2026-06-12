@@ -40,6 +40,11 @@ class Usuario extends Authenticatable implements FilamentUser, HasName
         return true;  // Admin completo
     }
 
+    public function puedeGestionarUsuarios(): bool
+    {
+        return in_array((int) $this->cargo, [1, 2], true);
+    }
+
     public function getFilamentName(): string  // ← ESTO RESUELVE
     {
         return trim("{$this->nombres} {$this->apellidos}");

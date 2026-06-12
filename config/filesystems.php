@@ -40,8 +40,9 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // Hosting compartido sin symlink: archivos directamente en public_html/storage
+            'root' => public_path('storage'),
+            'url' => rtrim((string) (env('FOTOS_BASE_URL') ?: env('APP_URL', 'http://localhost')), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -79,7 +80,7 @@ return [
 
     'media' => [
         'driver' => 'local',
-        'root' => storage_path('app/public/fotos'),
+        'root' => public_path('storage/fotos'),
         'url' => env('APP_URL').'/storage/fotos',
         'visibility' => 'public',
     ],

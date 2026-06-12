@@ -79,7 +79,8 @@
                 <p class="pe-services-hero__text">
                     Administramos, vendemos y valoramos inmuebles con más de 30 años de experiencia en Santander.
                 </p>
-                <div class="pe-services-hero__actions">
+                <!--
+                    <div class="pe-services-hero__actions">
                     @if ($whatsappAsesor)
                         <a href="{{ $whatsappAsesor }}" target="_blank" rel="noopener noreferrer" class="pe-services-btn pe-services-btn--primary">
                             <i class="fa fa-whatsapp" aria-hidden="true"></i>
@@ -90,14 +91,14 @@
                         <i class="fa fa-phone" aria-hidden="true"></i>
                         Centro de Ayuda
                     </a>
-                </div>
+                </div>-->
             </div>
         </div>
 
         <div class="pe-services-hero__media">
             <div
                 class="pe-services-hero__image"
-                style="background-image: url('{{ asset('images/servicios.jpg') }}');"
+                style="background-image: url('{{ asset('images/servicios.jpeg') }}');"
                 role="img"
                 aria-label="Vivienda moderna con jardín"
             ></div>

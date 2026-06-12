@@ -16,7 +16,30 @@ class ImageWatermarkService
 {
     private const WATERMARK_PATH = 'images/watermark.png';
 
-    private const WATERMARK_WIDTH_RATIO = 0.20;
+    /**
+     * @return list<string>
+     */
+    private function watermarkCandidates(): array
+    {
+        return array_values(array_unique(array_filter([
+            public_path(self::WATERMARK_PATH),
+            resolve_public_html_path() . DIRECTORY_SEPARATOR . self::WATERMARK_PATH,
+            base_path('public' . DIRECTORY_SEPARATOR . self::WATERMARK_PATH),
+        ])));
+    }
+
+    private function resolveWatermarkPath(): ?string
+    {
+        foreach ($this->watermarkCandidates() as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private const WATERMARK_WIDTH_RATIO = 0.50;
 
     private const MAX_WIDTH = 1200;
 
@@ -42,9 +65,7 @@ class ImageWatermarkService
 
         $encoded = $this->encodeOptimized($image, $useWebp);
 
-        $storage = Storage::disk($disk);
-        $storage->put($relativePath, $encoded);
-        $storage->setVisibility($relativePath, 'public');
+        $this->writePublicStorageFile($relativePath, $encoded);
 
         return $relativePath;
     }
@@ -54,14 +75,16 @@ class ImageWatermarkService
      */
     public function applyToStoredFile(string $relativePath, string $disk = 'public'): bool
     {
-        $storage = Storage::disk($disk);
-
-        if (! $storage->exists($relativePath)) {
+        if (! public_storage_file_exists($relativePath) && ! Storage::disk($disk)->exists($relativePath)) {
             return false;
         }
 
+        $absolutePath = public_storage_file_exists($relativePath)
+            ? public_storage_file_path($relativePath)
+            : Storage::disk($disk)->path($relativePath);
+
         $manager = new ImageManager(new Driver());
-        $image = $manager->read($storage->path($relativePath));
+        $image = $manager->read($absolutePath);
 
         if (! $this->applyWatermark($manager, $image)) {
             return false;
@@ -72,9 +95,34 @@ class ImageWatermarkService
             ? $image->encode(new PngEncoder())
             : $image->encode(new JpegEncoder(quality: 90));
 
-        $storage->put($relativePath, (string) $encoded);
+        $this->writePublicStorageFile($relativePath, (string) $encoded);
 
         return true;
+    }
+
+    /**
+     * Escribe en public_html/storage/… (no en storage/app/public del proyecto).
+     *
+     * @throws \RuntimeException
+     */
+    private function writePublicStorageFile(string $relativePath, string $contents): void
+    {
+        $absolutePath = public_storage_file_path($relativePath);
+        $directory = dirname($absolutePath);
+
+        if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            throw new \RuntimeException('No se pudo crear la carpeta: ' . $directory);
+        }
+
+        if (! is_writable($directory)) {
+            throw new \RuntimeException('La carpeta no tiene permisos de escritura: ' . $directory);
+        }
+
+        if (file_put_contents($absolutePath, $contents) === false) {
+            throw new \RuntimeException('No se pudo guardar la imagen en: ' . $absolutePath);
+        }
+
+        @chmod($absolutePath, 0644);
     }
 
     /**
@@ -104,9 +152,14 @@ class ImageWatermarkService
      */
     private function applyWatermark(ImageManager $manager, ImageInterface $image): bool
     {
-        $watermarkPath = public_path(self::WATERMARK_PATH);
+        $watermarkPath = $this->resolveWatermarkPath();
 
-        if (! is_file($watermarkPath)) {
+        if ($watermarkPath === null) {
+            report(new \RuntimeException(
+                'Marca de agua no encontrada. Sube public/images/watermark.png a public_html/images/ en el servidor. Rutas probadas: '
+                . implode(', ', $this->watermarkCandidates()),
+            ));
+
             return false;
         }
 

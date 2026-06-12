@@ -196,6 +196,14 @@ $(document).ready(function(){
 	/*----------------------------------------------------*/
 	/*  Inline CSS replacement for backgrounds etc.
 	/*----------------------------------------------------*/
+	function cssBackgroundUrl(url) {
+		if (!url) {
+			return '';
+		}
+
+		return 'url("' + String(url).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '")';
+	}
+
 	function inlineCSS() {
 
 		// Common Inline CSS
@@ -204,7 +212,7 @@ $(document).ready(function(){
 			var attrColorBG = $(this).attr('data-background-color');
 
 	        if(attrImageBG !== undefined) {
-	            $(this).css('background-image', 'url('+attrImageBG+')');
+	            $(this).css('background-image', cssBackgroundUrl(attrImageBG));
 	        }
 
 	        if(attrColorBG !== undefined) {
@@ -227,7 +235,7 @@ $(document).ready(function(){
 			var attrOpacity = $(this).attr('data-color-opacity');
 
 	        if(attrImage !== undefined && attrImage !== '' && !$(this).hasClass('parallax--has-video')) {
-	            $(this).css('background-image', 'url('+attrImage+')');
+	            $(this).css('background-image', cssBackgroundUrl(attrImage));
 	        }
 
 	        if(attrColor !== undefined) {
@@ -864,7 +872,7 @@ $(document).ready(function(){
 		$(this).append('<div class="img-box-background"></div>');
 
 		// set up a background image for each tile based on data-background-image attribute
-		$(this).children('.img-box-background').css({'background-image': 'url('+ $(this).attr('data-background-image') +')'});
+		$(this).children('.img-box-background').css({'background-image': cssBackgroundUrl($(this).attr('data-background-image'))});
 
 		// background animation on mousemove
 		// $(this).on('mousemove', function(e){

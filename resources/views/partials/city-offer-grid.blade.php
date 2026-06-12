@@ -6,7 +6,8 @@
     <div class="container">
         <div class="pe-city-offer__header">
             <h3 class="headline centered margin-bottom-35 margin-top-10">
-                Explora nuestras zonas destacadas <span>Conoce las mejores opciones en las zonas más exclusivas</span>
+                <!-- Explora nuestras zonas destacadas <span>Conoce las mejores opciones en las zonas más exclusivas</span> -->
+                Explora opciones por zonas
             </h3>
         </div>
 

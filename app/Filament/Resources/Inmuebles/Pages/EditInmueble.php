@@ -11,6 +11,7 @@ use Filament\Notifications\Notification;
 class EditInmueble extends EditRecord
 {
     use ManagesGaleriaFotos;
+
     protected static string $resource = InmuebleResource::class;
 
     protected function getHeaderActions(): array
@@ -46,6 +47,4 @@ class EditInmueble extends EditRecord
                 ->label('Cancelar'),
         ];
     }
-
-
 }

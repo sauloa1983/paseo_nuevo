@@ -42,7 +42,7 @@ class UsuariosForm
 
     private static function fotoPublicUrl(string $diskPath): string
     {
-        return '/storage/' . ltrim(str_replace('\\', '/', $diskPath), '/');
+        return admin_storage_url($diskPath) ?? '';
     }
 
     private static function fotoMimeType(string $diskPath): string

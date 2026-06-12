@@ -146,14 +146,22 @@ class FrontController extends Controller
 
     public function contact()
     {
-        $ciudadesConOficina = Ciudad::query()
-            ->where('has_office', true)
-            ->with('contacts')
-            ->orderByDesc('visible_buscador')
-            ->orderBy('nombre')
-            ->get();
+        $ciudadesConOficina = Ciudad::contactPageCiudades()->load('contacts');
 
-        return view('front.contact', compact('ciudadesConOficina'));
+        $oficinasContacto = Ciudad::contactFormOfficeOptions();
+        $oficinasUbicacion = Ciudad::contactOfficeLocations($ciudadesConOficina);
+
+        $primeraCiudad = $ciudadesConOficina->first();
+        $ubicacionInicial = $primeraCiudad
+            ? ($oficinasUbicacion[$primeraCiudad->contactLocationKey()] ?? ['address' => '', 'map_embed' => '', 'phones' => [], 'phones_html' => 'Sin teléfono registrado.'])
+            : ['address' => '', 'map_embed' => '', 'phones' => [], 'phones_html' => 'Sin teléfono registrado.'];
+
+        return view('front.contact', compact(
+            'ciudadesConOficina',
+            'oficinasContacto',
+            'oficinasUbicacion',
+            'ubicacionInicial',
+        ));
     }
 
     public function requirements()

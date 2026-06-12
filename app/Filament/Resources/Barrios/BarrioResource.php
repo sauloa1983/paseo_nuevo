@@ -10,9 +10,7 @@ use App\Models\Ciudad;
 use BackedEnum;
 use Dom\Text;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -102,16 +100,8 @@ class BarrioResource extends Resource
                     ->placeholder('Selecciona ciudad...'),
             ])
             ->recordActions([
-                EditAction::make()
-                    ->icon('heroicon-m-pencil-square')
-                    ->iconButton()
-                    ->size('xl')
-                    ->color('gray')
-                    ->tooltip('Editar barrio')
+                StandardTable::editAction('Editar barrio')
                     ->modalWidth('md')
-                    ->extraAttributes([
-                        'class' => 'group hover:animate-bounce',
-                    ])
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -119,27 +109,15 @@ class BarrioResource extends Resource
                             ->body('Los cambios se guardaron con éxito.'),
                     ),
                 InmuebleLinkedDeleteGuard::wrapDeleteAction(
-                    DeleteAction::make()
-                        ->color('danger')
-                        ->icon('heroicon-m-trash')
-                        ->modalIconColor('danger')
-                        ->modalHeading('¿Eliminar barrio?')
-                        ->modalDescription('¿Está seguro de que desea eliminar este barrio? Esta acción no se puede deshacer.')
-                        ->iconButton()
-                        ->size('xl')
-                        ->modalSubmitAction(fn ($action) => $action->color('danger'))
-                        ->modalCancelAction(fn ($action) => $action->color('gray'))
-                        ->color('gray')
-                        ->tooltip('Eliminar barrio')
-                        ->extraAttributes([
-                            'class' => 'group hover:animate-bounce',
-                        ])
-                        ->successNotification(
-                            Notification::make()
-                                ->danger()
-                                ->title('Barrio eliminado')
-                                ->body('El barrio se eliminó correctamente.'),
-                        ),
+                    StandardTable::deleteAction(
+                        'Eliminar barrio',
+                        '¿Eliminar barrio?',
+                        '¿Está seguro de que desea eliminar este barrio? Esta acción no se puede deshacer.',
+                        Notification::make()
+                            ->danger()
+                            ->title('Barrio eliminado')
+                            ->body('El barrio se eliminó correctamente.'),
+                    ),
                     'No se puede eliminar el barrio',
                 ),
             ])

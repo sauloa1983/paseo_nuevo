@@ -4,9 +4,9 @@
 
     $fotoUrl = null;
     if (! empty($inmueble->fotoInmueble) && $inmueble->fotoInmueble->isNotEmpty()) {
-        $fotoUrl = 'https://www.paseoespanainmobiliaria.com/' . ltrim($inmueble->fotoInmueble->first()->foto, '/');
+        $fotoUrl = foto_inmueble_url($inmueble->fotoInmueble->first()->foto);
     } elseif (! empty($inmueble->fotos) && $inmueble->fotos->isNotEmpty()) {
-        $fotoUrl = 'https://www.paseoespanainmobiliaria.com/' . ltrim($inmueble->fotos->first()->foto, '/');
+        $fotoUrl = foto_inmueble_url($inmueble->fotos->first()->foto);
     }
 
     // Sufijo "+ IVA" cuando el inmueble está marcado con IVA (locales, oficinas, etc.).
@@ -67,13 +67,13 @@
     }
 
     $badgeStatusClass = $inmueble->badgeStatusCssClass();
-    $esEstrena = ($inmueble->badge_status ?? null) === 'ESTRENA';
+    $esEstrenar = ($inmueble->badge_status ?? null) === 'ESTRENAR';
     $tieneDisponibilidad = filled($inmueble->disponibilidad_texto);
     $tieneEtiquetaComercial = filled($inmueble->badge_status_etiqueta) && filled($badgeStatusClass);
     $etiquetaEnSlotDisponibilidad = $tieneEtiquetaComercial && ! $tieneDisponibilidad;
 @endphp
 
-<article @class(['pe-property-card', 'pe-property-card--estrena' => $esEstrena])>
+<article @class(['pe-property-card', 'pe-property-card--estrenar' => $esEstrenar])>
     <a href="{{ $showUrl }}" class="pe-property-card__media" tabindex="-1" aria-hidden="true">
         @if($fotoUrl)
             <img
@@ -97,7 +97,7 @@
             </span>
         @elseif($etiquetaEnSlotDisponibilidad)
             <span class="pe-property-card__badge {{ $badgeStatusClass }} pe-property-card__badge--comercial-slot">
-                @if($esEstrena)
+                @if($esEstrenar)
                     <i class="fa fa-star" aria-hidden="true"></i>
                 @endif
                 {{ $inmueble->badge_status_etiqueta }}
@@ -115,7 +115,7 @@
             @if($tieneEtiquetaComercial && ! $etiquetaEnSlotDisponibilidad)
                 <div class="pe-property-card__badges-start">
                     <span class="pe-property-card__badge {{ $badgeStatusClass }}">
-                        @if($esEstrena)
+                        @if($esEstrenar)
                             <i class="fa fa-star" aria-hidden="true"></i>
                         @endif
                         {{ $inmueble->badge_status_etiqueta }}

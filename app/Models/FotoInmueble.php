@@ -37,7 +37,7 @@ class FotoInmueble extends Model implements HasMedia
         $path = $this->foto;
 
         return $path
-            ? asset('storage/' . ltrim($path, '/'))
+            ? public_storage_url('fotos/' . ltrim(str_replace('fotos/', '', $path), '/'))
             : null;
     }
 

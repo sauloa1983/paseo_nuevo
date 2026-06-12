@@ -24,7 +24,6 @@ class InmueblesTable
             ->columns([
                 TextColumn::make('codigo')
                     ->label('Código')
-                    ->numeric()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('estado')

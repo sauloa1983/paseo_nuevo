@@ -44,7 +44,7 @@ class CiudadForm
 
     private static function imagenPublicUrl(string $diskPath): string
     {
-        return '/storage/' . ltrim(str_replace('\\', '/', $diskPath), '/');
+        return admin_storage_url($diskPath) ?? '';
     }
 
     private static function imagenMimeType(string $diskPath): string
@@ -159,6 +159,7 @@ class CiudadForm
                                             $set('telefono', null);
                                             $set('direccion', null);
                                             $set('matricula', null);
+                                            $set('email', null);
                                         } else {
                                             $set('sedes', []);
                                         }
@@ -181,10 +182,39 @@ class CiudadForm
                                                     ->columnSpan(2),
                                             ]),
 
-                                        TextInput::make('matricula')
-                                            ->label('Matrícula')
-                                            ->maxLength(100)
-                                            ->placeholder('Ej: M. de A. 0126/96'),
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('matricula')
+                                                    ->label('Matrícula')
+                                                    ->maxLength(100)
+                                                    ->placeholder('Ej: M. de A. 0126/96'),
+
+                                                TextInput::make('email')
+                                                    ->label('Correo electrónico')
+                                                    ->email()
+                                                    ->maxLength(255)
+                                                    ->helperText('Correo al que llegan los mensajes del formulario de contacto web.'),
+                                            ]),
+
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('latitud')
+                                                    ->label('Latitud')
+                                                    ->numeric()
+                                                    ->step(0.0000001),
+
+                                                TextInput::make('longitud')
+                                                    ->label('Longitud')
+                                                    ->numeric()
+                                                    ->step(0.0000001),
+                                            ]),
+
+                                        TextInput::make('mapa_embed')
+                                            ->label('URL del mapa (embed)')
+                                            ->url()
+                                            ->maxLength(500)
+                                            ->helperText('Opcional. En Google Maps: Compartir > Insertar un mapa > copiar la URL del src del iframe. Si se deja vacío, se usan las coordenadas o la dirección.')
+                                            ->columnSpanFull(),
                                     ])
                                     ->visible(fn (Get $get): bool => ! (bool) $get('tiene_multiples_sedes'))
                                     ->dehydrated(fn (Get $get): bool => ! (bool) $get('tiene_multiples_sedes'))
@@ -217,21 +247,42 @@ class CiudadForm
                                                     ->maxLength(50),
                                             ]),
 
+                                        TextInput::make('direccion')
+                                            ->label('Dirección')
+                                            ->maxLength(255)
+                                            ->columnSpanFull(),
+
                                         Grid::make(2)
                                             ->schema([
-                                                TextInput::make('direccion')
-                                                    ->label('Dirección')
-                                                    ->maxLength(255),
-
                                                 TextInput::make('matricula')
                                                     ->label('Matrícula')
                                                     ->maxLength(100),
+
+                                                TextInput::make('email')
+                                                    ->label('Correo electrónico')
+                                                    ->email()
+                                                    ->maxLength(255)
+                                                    ->helperText('Correo al que llegan los mensajes del formulario de contacto web.'),
                                             ]),
 
-                                        TextInput::make('email')
-                                            ->label('Correo electrónico')
-                                            ->email()
-                                            ->maxLength(255)
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('latitud')
+                                                    ->label('Latitud')
+                                                    ->numeric()
+                                                    ->step(0.0000001),
+
+                                                TextInput::make('longitud')
+                                                    ->label('Longitud')
+                                                    ->numeric()
+                                                    ->step(0.0000001),
+                                            ]),
+
+                                        TextInput::make('mapa_embed')
+                                            ->label('URL del mapa (embed)')
+                                            ->url()
+                                            ->maxLength(500)
+                                            ->helperText('Opcional. En Google Maps: Compartir > Insertar un mapa > copiar la URL del src del iframe.')
                                             ->columnSpanFull(),
 
                                         Repeater::make('dependencias')
