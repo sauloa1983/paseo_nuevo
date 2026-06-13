@@ -5653,6 +5653,12 @@ ul.footer-links.pe-footer-links-grid li a:hover {
     border: 1px solid #f1f5f9;
 }
 
+.pe-testimonials-card__avatar--logo {
+    object-fit: contain;
+    padding: 6px;
+    background: #fff;
+}
+
 .pe-testimonials-card__author-meta {
     min-width: 0;
 }
@@ -6970,6 +6976,10 @@ ul.footer-links.pe-footer-links-grid li a:hover {
     margin-bottom: 1rem;
 }
 
+.pe-contact-sede-block__head--solo {
+    margin-bottom: 0;
+}
+
 .pe-contact-sede-block__title {
     margin: 0 0 0.75rem;
     font-size: 1.85rem;
@@ -7256,6 +7266,34 @@ ul.footer-links.pe-footer-links-grid li a:hover {
     color: #991b1b;
     background: #fef2f2;
     border: 1px solid #fecaca;
+}
+
+.pe-property-form-message {
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-top: 0.85rem;
+    margin-bottom: 0;
+    line-height: 1.45;
+}
+
+.pe-property-form-message__icon {
+    flex: 0 0 auto;
+    width: 1.35rem;
+    margin-top: 0.1rem;
+    text-align: center;
+}
+
+.pe-property-form-message.is-success .pe-property-form-message__icon {
+    color: #16a34a;
+}
+
+.pe-property-form-message.is-error .pe-property-form-message__icon {
+    color: #dc2626;
+}
+
+.pe-property-form-message__text {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .pe-contact-cta {

@@ -9,7 +9,20 @@ DirectoryIndex index.php
     RewriteEngine On
     RewriteBase /
 
-    RewriteRule ^(livewire|entrar|acceso|cambiar-clave|filament|pe-panel|gestion)(/.*)?$ index.php [L,QSA]
+    # Dominio antiguo -> sitio actual (301 permanente, conserva ruta y query)
+    RewriteCond %{HTTP_HOST} ^(www\.)?paseoespanainmobiliaria\.com$ [NC]
+    RewriteRule ^ https://www.paseoespana.com%{REQUEST_URI} [R=301,L]
+
+    # paseoespana.com (sin www) -> www.paseoespana.com
+    RewriteCond %{HTTP_HOST} ^paseoespana\.com$ [NC]
+    RewriteRule ^ https://www.paseoespana.com%{REQUEST_URI} [R=301,L]
+
+    # HTTP -> HTTPS en el dominio principal
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP_HOST} ^www\.paseoespana\.com$ [NC]
+    RewriteRule ^ https://www.paseoespana.com%{REQUEST_URI} [R=301,L]
+
+    RewriteRule ^(livewire|entrar|acceso|cambiar-clave|filament|pe-panel|gestion|limpiar-vistas|diag-panel|media)(/.*)?$ index.php [L,QSA]
 
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

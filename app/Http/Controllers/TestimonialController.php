@@ -11,14 +11,12 @@ class TestimonialController extends Controller
     {
         $data = $request->validate([
             'nombre' => 'required|string|max:100',
-            'descripcion' => 'required|string|max:100',
             'calificacion' => 'required|integer|min:1|max:5',
             'mensaje' => 'required|string|max:250',
         ]);
 
         Testimonial::create([
             'nombre' => $data['nombre'],
-            'descripcion' => $data['descripcion'],
             'calificacion' => $data['calificacion'],
             'mensaje' => $data['mensaje'],
             'activo' => 0,

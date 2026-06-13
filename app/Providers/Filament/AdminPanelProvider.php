@@ -71,6 +71,12 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::SIDEBAR_LOGO_BEFORE,
                 fn (): string => view('filament.partials.admin-topbar-brand')->render()
             )
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => filament()->auth()->check()
+                    ? view('filament.partials.help-center-trigger')->render()
+                    : ''
+            )
 
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

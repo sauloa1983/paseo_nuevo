@@ -44,14 +44,6 @@ class TestimonialResource extends Resource
                         'required' => 'Campo obligatorio.',
                         'max' => 'El texto excede los 50 caracteres.',
                     ]),
-                TextInput::make('descripcion')
-                    ->label('Titulo')
-                    ->required()
-                    ->maxLength(255)
-                    ->validationMessages([
-                        'required' => 'Debe contener una descripción.',
-                        'max' => 'El texto excede los 255 caracteres.',
-                    ]),
                 Select::make('calificacion')
                     ->label('Calificación')
                     ->options([
@@ -92,8 +84,8 @@ class TestimonialResource extends Resource
         return StandardTable::configure($table)
             ->recordTitleAttribute('Testimonios')
             ->columns([
-                TextColumn::make('descripcion')
-                    ->label('Descripción')
+                TextColumn::make('nombre')
+                    ->label('Usuario')
                     ->searchable(),
                 TextColumn::make('calificacion')
                     ->label('Calificación')

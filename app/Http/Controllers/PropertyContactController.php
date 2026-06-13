@@ -6,7 +6,6 @@ use App\Mail\PropertyContactMail;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Log;
 
 class PropertyContactController extends Controller
 {
@@ -19,10 +18,22 @@ class PropertyContactController extends Controller
             'message' => 'required',
         ]);
 
-        $property = Property::findOrFail($request->property_id);
+        $property = Property::query()
+            ->with('asesorData')
+            ->findOrFail($request->property_id);
+
+        $advisorEmail = $property->advisorEmail();
+        $recipientEmail = mail_recipient($advisorEmail ?? '');
+
+        if (blank($recipientEmail)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este inmueble no tiene un asesor con correo registrado. Usa el teléfono de contacto.',
+            ], 422);
+        }
 
         try {
-            Mail::to('sauloandres@gmail.com')->send(
+            Mail::to($recipientEmail)->send(
                 new PropertyContactMail(
                     $property,
                     $request->only('email', 'phone', 'message')
@@ -31,45 +42,13 @@ class PropertyContactController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tu mensaje fue enviado correctamente.'
+                'message' => 'Tu mensaje fue enviado correctamente al asesor.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al enviar: ' . $e->getMessage()
+                'message' => 'Error al enviar: ' . $e->getMessage(),
             ], 500);
         }
     }
 }
-
-
-/*
-public function send(Request $request)
-    {
-        $request->validate([
-            'property_id' => 'required',
-            'email' => 'required|email',
-            'phone' => 'required',
-            'message' => 'required',
-        ]);
-
-        $property = Property::findOrFail($request->property_id);
-
-        try {
-            Mail::raw(
-                "Nuevo contacto\n\n".
-                "Property ID: ".$property->id."\n".
-                "Email cliente: ".$request->email."\n".
-                "Teléfono: ".$request->phone."\n".
-                "Mensaje: ".$request->message,
-                function ($message) {
-                    $message->to('sauloandres@gmail.com')
-                            ->subject('Prueba formulario propiedad');
-                }
-            );
-
-            return back()->with('success', 'Correo enviado correctamente desde el formulario.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Error al enviar: '.$e->getMessage());
-        }
-    }*/

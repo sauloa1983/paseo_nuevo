@@ -44,7 +44,7 @@ class ContactController extends Controller
 
         try {
             Mail::send('emails.contact', $mailData, function ($message) use ($mailData, $recipientEmail): void {
-                $message->to($recipientEmail, 'Paseo España - '.$mailData['office'])
+                $message->to(mail_recipient($recipientEmail), 'Paseo España - '.$mailData['office'])
                     ->replyTo($mailData['email'], $mailData['name'])
                     ->subject('[Contacto web] '.$mailData['subject']);
             });

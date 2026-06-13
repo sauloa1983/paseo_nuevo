@@ -52,9 +52,18 @@
                     x-cloak
                 >
                     @if ($ciudad->hasContactSedes())
-                        <div class="pe-contact-sedes-stack">
-                            @foreach ($ciudad->contactSedesForDisplay() as $sede)
-                                @include('partials.office-sede-block', ['sede' => $sede, 'ciudad' => $ciudad])
+                        @php
+                            $sedesContacto = $ciudad->contactSedesForDisplay();
+                        @endphp
+                        <div @class([
+                            'pe-contact-dept-grid' => $sedesContacto->count() > 1,
+                            'pe-contact-sedes-stack' => $sedesContacto->count() <= 1,
+                        ])>
+                            @foreach ($sedesContacto as $sede)
+                                @include('partials.office-sede-block', [
+                                    'sede' => $sede,
+                                    'ciudad' => $ciudad,
+                                ])
                             @endforeach
                         </div>
                     @elseif ($ciudad->contacts->isNotEmpty())

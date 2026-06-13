@@ -105,6 +105,32 @@ if (! function_exists('public_storage_root')) {
     }
 }
 
+if (! function_exists('public_html_file_path')) {
+    /**
+     * Ruta absoluta a un archivo estático (images/, css/, etc.) en la raíz web.
+     */
+    function public_html_file_path(string $relativePath): string
+    {
+        return resolve_public_html_path() . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $relativePath), DIRECTORY_SEPARATOR);
+    }
+}
+
+if (! function_exists('public_html_file')) {
+    /**
+     * Devuelve la ruta si el archivo existe en la raíz web; null si no.
+     */
+    function public_html_file(string $relativePath): ?string
+    {
+        if (blank($relativePath)) {
+            return null;
+        }
+
+        $path = public_html_file_path($relativePath);
+
+        return is_file($path) ? $path : null;
+    }
+}
+
 if (! function_exists('public_storage_file_path')) {
     function public_storage_file_path(string $diskRelativePath): string
     {
@@ -204,6 +230,18 @@ if (! function_exists('foto_inmueble_url')) {
         }
 
         return public_storage_url('fotos/' . $filename);
+    }
+}
+
+if (! function_exists('mail_recipient')) {
+    /**
+     * Redirige correos a MAIL_TEST_RECIPIENT cuando está configurado (pruebas).
+     */
+    function mail_recipient(string $recipient): string
+    {
+        $override = config('mail.test_recipient');
+
+        return filled($override) ? (string) $override : $recipient;
     }
 }
 

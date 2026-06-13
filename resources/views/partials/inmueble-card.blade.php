@@ -3,10 +3,9 @@
     $esNuevo = $inmueble->fecha_captacion >= now()->subDays(30);
 
     $fotoUrl = null;
-    if (! empty($inmueble->fotoInmueble) && $inmueble->fotoInmueble->isNotEmpty()) {
-        $fotoUrl = foto_inmueble_url($inmueble->fotoInmueble->first()->foto);
-    } elseif (! empty($inmueble->fotos) && $inmueble->fotos->isNotEmpty()) {
-        $fotoUrl = foto_inmueble_url($inmueble->fotos->first()->foto);
+    $fotos = $inmueble->fotos ?? $inmueble->fotoInmueble ?? null;
+    if (! empty($fotos) && $fotos->isNotEmpty()) {
+        $fotoUrl = foto_inmueble_url($fotos->first()->foto);
     }
 
     // Sufijo "+ IVA" cuando el inmueble está marcado con IVA (locales, oficinas, etc.).

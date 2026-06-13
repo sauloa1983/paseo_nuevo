@@ -43,15 +43,14 @@
 
                         <div class="pe-testimonials-card__author">
                             <img
-                                class="pe-testimonials-card__avatar"
-                                src="{{ $testimonial->photo ? asset('storage/' . $testimonial->photo) : asset('images/happy-client-01.jpg') }}"
-                                alt="Foto de {{ $testimonial->nombre }}"
+                                class="pe-testimonials-card__avatar pe-testimonials-card__avatar--logo"
+                                src="{{ asset('images/logo_v.png') }}"
+                                alt="Paseo España Inmobiliaria"
                                 loading="lazy"
                                 decoding="async"
                             >
                             <div class="pe-testimonials-card__author-meta">
                                 <div class="pe-testimonials-card__name">{{ $testimonial->nombre }}</div>
-                                <div class="pe-testimonials-card__desc">{{ $testimonial->descripcion }}</div>
                             </div>
                         </div>
                     </article>
@@ -69,30 +68,15 @@
                 <form action="{{ route('testimonials.store') }}" method="POST" class="pe-testimonials-form__form">
                     @csrf
 
-                    <div class="pe-testimonials-form__row">
-                        <div class="pe-testimonials-form__field">
-                            <label class="pe-testimonials-form__label">Nombre completo</label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value="{{ old('nombre') }}"
-                                class="pe-testimonials-form__input"
-                            >
-                            @error('nombre') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
-
-                        <div class="pe-testimonials-form__field">
-                            <label class="pe-testimonials-form__label">Tipo de servicio</label>
-                            <select name="descripcion" class="pe-testimonials-form__input">
-                                <option value="" @selected(old('descripcion') === '')>Selecciona una opción</option>
-                                <option value="Arriendo" @selected(old('descripcion') === 'Arriendo')>Arriendo</option>
-                                <option value="Venta" @selected(old('descripcion') === 'Venta')>Venta</option>
-                                <option value="Administración" @selected(old('descripcion') === 'Administración')>Administración</option>
-                                <option value="Avalúo" @selected(old('descripcion') === 'Avalúo')>Avalúo</option>
-                                <option value="Otro" @selected(old('descripcion') === 'Otro')>Otro</option>
-                            </select>
-                            @error('descripcion') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
+                    <div class="pe-testimonials-form__field">
+                        <label class="pe-testimonials-form__label">Nombre completo</label>
+                        <input
+                            type="text"
+                            name="nombre"
+                            value="{{ old('nombre') }}"
+                            class="pe-testimonials-form__input"
+                        >
+                        @error('nombre') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
 
                     <div class="pe-testimonials-form__rating">

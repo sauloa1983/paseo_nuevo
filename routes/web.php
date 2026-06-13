@@ -292,6 +292,107 @@ if (! function_exists('publicStorageDiagnostics')) {
     }
 }
 
+Route::get('/limpiar-vistas', function () {
+    $token = (string) env('DEPLOY_CLEAR_TOKEN', '');
+
+    if ($token === '' || ! hash_equals($token, (string) request()->query('token', ''))) {
+        abort(404);
+    }
+
+    $messages = [];
+
+    foreach (['view:clear', 'config:clear', 'route:clear', 'cache:clear'] as $command) {
+        Artisan::call($command);
+        $messages[] = $command . ': ok';
+    }
+
+    $panelDomain = panel_domain();
+    $loginUrl = filament()->getPanel('admin')->getLoginUrl();
+
+    $messages[] = '';
+    $messages[] = 'FILAMENT_DOMAIN: ' . ($panelDomain ?: '(no definido — panel en /pe-panel/acceso del sitio principal)');
+    $messages[] = 'URL login panel: ' . ($loginUrl ?: '(no disponible)');
+
+    return response(
+        implode("\n", $messages) . "\n\nQuita DEPLOY_CLEAR_TOKEN del .env cuando termines.",
+        200,
+        ['Content-Type' => 'text/plain; charset=utf-8'],
+    );
+});
+
+Route::get('/diag-panel', function () {
+    $token = (string) env('DEPLOY_CLEAR_TOKEN', '');
+
+    if ($token === '' || ! hash_equals($token, (string) request()->query('token', ''))) {
+        abort(404);
+    }
+
+    $lines = [
+        '=== Diagnóstico panel Filament ===',
+        'Host: ' . request()->getHost(),
+        'APP_URL: ' . config('app.url'),
+        'FILAMENT_DOMAIN (config): ' . (config('app.panel_domain') ?: '(vacío)'),
+        'panel_domain(): ' . (panel_domain() ?: '(vacío)'),
+    ];
+
+    try {
+        $panel = filament()->getPanel('admin');
+        $lines[] = 'Login URL: ' . ($panel->getLoginUrl() ?: '(vacío)');
+        $lines[] = 'Panel path: ' . ($panel->getPath() ?: '(raíz del subdominio)');
+    } catch (\Throwable $e) {
+        $lines[] = 'Filament error: ' . $e->getMessage();
+    }
+
+    $accesoRoutes = collect(app('router')->getRoutes())
+        ->filter(fn ($route): bool => str_contains($route->uri(), 'acceso'))
+        ->map(fn ($route): string => implode('|', $route->methods()) . ' '
+            . ($route->getDomain() ?: '*') . ' /' . $route->uri())
+        ->values();
+
+    $lines[] = '';
+    $lines[] = 'Rutas con "acceso":';
+
+    if ($accesoRoutes->isEmpty()) {
+        $lines[] = '  (ninguna — borra bootstrap/cache/*.php en el servidor)';
+    } else {
+        foreach ($accesoRoutes as $routeLine) {
+            $lines[] = '  ' . $routeLine;
+        }
+    }
+
+    $cacheFiles = glob(base_path('bootstrap/cache/*.php')) ?: [];
+    $lines[] = '';
+    $lines[] = 'Archivos en bootstrap/cache: ' . count($cacheFiles);
+
+    foreach ($cacheFiles as $file) {
+        $lines[] = '  - ' . basename($file);
+    }
+
+    if (request()->boolean('clear')) {
+        $lines[] = '';
+        $lines[] = '=== Limpiando caché ===';
+
+        foreach (['view:clear', 'config:clear', 'route:clear', 'cache:clear'] as $command) {
+            Artisan::call($command);
+            $lines[] = $command . ': ok';
+        }
+
+        try {
+            $lines[] = 'Login URL (después de limpiar): ' . filament()->getPanel('admin')->getLoginUrl();
+        } catch (\Throwable $e) {
+            $lines[] = 'Login URL: error — ' . $e->getMessage();
+        }
+    } else {
+        $lines[] = '';
+        $lines[] = 'Agrega &clear=1 a esta URL para limpiar caché automáticamente.';
+    }
+
+    $lines[] = '';
+    $lines[] = 'BORRA DEPLOY_CLEAR_TOKEN del .env cuando termines.';
+
+    return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=utf-8']);
+});
+
 /*Route::get('/limpiar-sistema', function () {
     $messages = [];
 
@@ -323,6 +424,13 @@ if ($panelDomain = panel_domain()) {
     Route::domain($panelDomain)->group(function (): void {
         Route::redirect('/entrar', '/acceso', 301);
     });
+
+    foreach (mainSiteHosts() as $siteHost) {
+        Route::domain($siteHost)->group(function () use ($panelDomain): void {
+            Route::redirect('/pe-panel', 'https://' . $panelDomain . '/acceso', 302);
+            Route::redirect('/pe-panel/acceso', 'https://' . $panelDomain . '/acceso', 302);
+        });
+    }
 }
 
 Route::get('/media/{path}', function (string $path) {

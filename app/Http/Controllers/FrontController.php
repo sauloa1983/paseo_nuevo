@@ -102,9 +102,7 @@ class FrontController extends Controller
         // 4) Hidrata los modelos con sus relaciones, mezclando sedes en pantalla
         return Inmueble::whereIn('id', $ids)
             ->with([
-                'fotoInmueble' => function ($query) {
-                    $query->where('posicion', 0);
-                },
+                'fotos',
                 'tipo_inmueble',
                 'ciudadRelacion',
                 'barrio',

@@ -53,6 +53,12 @@ class Inmueble extends Model
             ->orderBy('posicion', 'asc');
     }
 
+    /** Alias usado en listados (misma relación que fotoInmueble). */
+    public function fotos()
+    {
+        return $this->fotoInmueble();
+    }
+
     public function tipo_inmueble()
     {
         return $this->belongsTo(TipoInmueble::class, 'tipo_fk');

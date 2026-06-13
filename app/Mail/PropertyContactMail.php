@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Property;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -24,7 +25,16 @@ class PropertyContactMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $replyTo = filled($this->contactData['email'] ?? null)
+            ? [new Address($this->contactData['email'])]
+            : [];
+
         return new Envelope(
+            from: new Address(
+                config('mail.from.address'),
+                config('mail.from.name'),
+            ),
+            replyTo: $replyTo,
             subject: 'Interés en el inmueble [Cod: ' . $this->property->codigo . ']',
         );
     }

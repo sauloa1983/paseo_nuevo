@@ -76,5 +76,60 @@ class Property extends Model
         return $this->belongsTo(Usuario::class, 'asesor', 'id');
     }
 
+    public function advisorEmail(): ?string
+    {
+        $email = trim((string) ($this->asesorData?->email ?? ''));
+
+        return filled($email) ? $email : null;
+    }
+
+    /**
+     * @return array{0: float, 1: float}|null
+     */
+    public function mapCoordinates(): ?array
+    {
+        if (! filled($this->latitud) || ! filled($this->longitud)) {
+            return null;
+        }
+
+        $lat = (float) $this->latitud;
+        $lng = (float) $this->longitud;
+
+        if ($lat === 0.0 && $lng === 0.0) {
+            return null;
+        }
+
+        return [$lat, $lng];
+    }
+
+    public function mapQuery(): string
+    {
+        $ciudadNombre = trim((string) ($this->ciudadRelacion->nombre ?? $this->ciudad?->nombre ?? ''));
+
+        $parts = array_values(array_filter([
+            trim((string) ($this->direccion ?? '')),
+            trim((string) ($this->barrio->nombre ?? '')),
+            $ciudadNombre,
+            'Colombia',
+        ], fn (string $part): bool => $part !== ''));
+
+        return implode(', ', $parts);
+    }
+
+    public function mapEmbedUrl(): ?string
+    {
+        if ($coordinates = $this->mapCoordinates()) {
+            return Ciudad::googleMapsEmbedFromCoordinates($coordinates[0], $coordinates[1]);
+        }
+
+        $query = $this->mapQuery();
+
+        if ($query === '' || $query === 'Colombia') {
+            return null;
+        }
+
+        return Ciudad::googleMapsEmbedUrl($query);
+    }
+
     /*protected $primaryKey = 'id';*/
 }

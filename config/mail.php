@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Destinatario temporal de pruebas
+    |--------------------------------------------------------------------------
+    |
+    | Si MAIL_TEST_RECIPIENT está definido, todos los correos del sitio
+    | se envían a esa dirección. Déjalo vacío en producción real.
+    |
+    */
+
+    'test_recipient' => env('MAIL_TEST_RECIPIENT'),
+
 ];

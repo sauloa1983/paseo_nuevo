@@ -310,7 +310,7 @@ class PropertyController extends Controller
     {
          ////////// INMUEBLES SIMILARES ///////////
         $property = Property::where('codigo', $inmueble)
-            ->with('asesorData')
+            ->with(['asesorData', 'barrio', 'ciudadRelacion'])
             ->firstOrFail();
 
         $property_val = $property->arriendo == "1"

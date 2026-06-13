@@ -568,25 +568,14 @@ class Ciudad extends Model
             return collect();
         }
 
-        return collect($this->contactSedesRelevantes())
+        return collect($this->normalizedSedesList())
             ->map(fn (array $sede): array => [
                 'nombre' => (string) $sede['nombre_sede'],
                 'direccion' => (string) ($sede['direccion'] ?? ''),
                 'telefono' => (string) ($sede['telefono'] ?? ''),
                 'email' => (string) ($sede['email'] ?? ''),
                 'matricula' => (string) ($sede['matricula'] ?? ''),
-                'dependencias' => collect($sede['dependencias'] ?? [])
-                    ->filter(fn (array $dep): bool => filled($dep['nombre_dependencia'] ?? null))
-                    ->map(fn (array $dep): array => [
-                        'nombre' => (string) $dep['nombre_dependencia'],
-                        'contacto' => (string) ($dep['contacto_nombre'] ?? ''),
-                        'telefono' => (string) ($dep['telefono_contacto'] ?? ''),
-                        'email' => (string) ($dep['email_contacto'] ?? ''),
-                    ])
-                    ->values()
-                    ->all(),
             ])
-            ->filter(fn (array $sede): bool => ! empty($sede['dependencias']))
             ->values();
     }
 

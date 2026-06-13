@@ -353,9 +353,8 @@
 				@endif
 
 				@php
-					$ciudadNombre = optional($property->ciudad()->first())->nombre ?? 'No asignada';
-					$mapsQuery = trim(($property->barrio->nombre ?? '') . ', ' . $ciudadNombre);
 					$hasPropertyVideo = filled($property->video_principal_embed);
+					$mapEmbedUrl = $property->mapEmbedUrl();
 				@endphp
 
 				<div class="pe-media-stack">
@@ -368,18 +367,20 @@
 					</section>
 					@endif
 
+					@if($mapEmbedUrl)
 					<section class="pe-media-block" id="location">
 						<h3 class="desc-headline no-border">Ubicación</h3>
 						<div class="pe-media-card pe-map-card pe-map-card--compact">
 							<div class="pe-map-card__frame">
 								<iframe
-									src="https://www.google.com/maps?q={{ rawurlencode($mapsQuery) }}&output=embed"
+									src="{{ $mapEmbedUrl }}"
 									loading="lazy"
 									referrerpolicy="no-referrer-when-downgrade"
 								></iframe>
 							</div>
 						</div>
 					</section>
+					@endif
 
 					@if(! $hasPropertyVideo && ! empty($promotionalVideo))
 						@php
@@ -506,8 +507,6 @@
 
                             <div class="clearfix"></div>
                         </div>
-                        <div id="form-message" style="display:none; margin-bottom:15px;"></div>
-
                         <form id="propertyContactForm" action="{{ route('property.contact') }}" method="POST">
                             @csrf
 
@@ -537,6 +536,8 @@
                             <button type="submit" id="submitBtn" class="button fullwidth margin-top-5">
                                 Contactar Asesor
                             </button>
+
+                            <div id="form-message" class="pe-contact-form-message pe-property-form-message" style="display:none;" role="alert"></div>
                         </form>
                     </div>
 
@@ -644,13 +645,34 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    const defaultBtnText = submitBtn ? submitBtn.innerText : 'Contactar Asesor';
+
+    function showFormMessage(type, html) {
+        const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-circle';
+
+        messageBox.className = 'pe-contact-form-message pe-property-form-message';
+        messageBox.classList.add(type === 'success' ? 'is-success' : 'is-error');
+        messageBox.style.display = 'flex';
+        messageBox.innerHTML =
+            '<span class="pe-property-form-message__icon" aria-hidden="true"><i class="fa ' + icon + '"></i></span>' +
+            '<span class="pe-property-form-message__text">' + html + '</span>';
+
+        if (type === 'success') {
+            window.setTimeout(clearFormMessage, 6000);
+        }
+    }
+
+    function clearFormMessage() {
+        messageBox.style.display = 'none';
+        messageBox.className = 'pe-contact-form-message pe-property-form-message';
+        messageBox.innerHTML = '';
+    }
 
     if (form && submitBtn) {
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        messageBox.style.display = 'none';
-        messageBox.innerHTML = '';
+        clearFormMessage();
 
         submitBtn.disabled = true;
         submitBtn.innerText = 'Enviando...';
@@ -670,15 +692,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await response.json();
 
             if (response.ok) {
-                messageBox.style.display = 'block';
-                messageBox.style.color = 'green';
-                messageBox.innerHTML = data.message;
+                showFormMessage('success', data.message || 'Tu mensaje fue enviado correctamente al asesor.');
                 form.reset();
-
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                    messageBox.innerHTML = '';
-                }, 4000);
             } else {
                 let errors = data.message || 'Ocurrió un error al enviar.';
 
@@ -686,21 +701,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     errors = Object.values(data.errors).flat().join('<br>');
                 }
 
-                messageBox.style.display = 'block';
-                messageBox.style.color = 'white';
-                messageBox.style.background = 'red';
-                messageBox.style.padding = '10px';
-                messageBox.innerHTML = errors;
+                showFormMessage('error', errors);
             }
         } catch (error) {
-            messageBox.style.display = 'block';
-            messageBox.style.color = 'white';
-            messageBox.style.background = 'red';
-            messageBox.style.padding = '10px';
-            messageBox.innerHTML = 'Error de conexión.';
+            showFormMessage('error', 'Error de conexión. Intenta de nuevo en unos segundos.');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerText = 'Contactar Asesor';
+            submitBtn.innerText = defaultBtnText;
         }
     });
     } else {
